@@ -966,10 +966,7 @@ canvas.addEventListener('mousedown', (e) => {
 
             
             // --- TAŞIMA/DÖNDÜRME/BOYUTLANDIRMA MANTIĞI ---
-            if (window.audio_eraser) { 
-                window.audio_eraser.currentTime = 0;
-                window.audio_eraser.play();
-            }
+            
 
             isMoving = true;
             selectedItem = hit.item;
@@ -1628,8 +1625,6 @@ canvas.addEventListener('touchstart', (e) => {
             if (hit.pointKey === 'toggle_edges') { hit.item.showEdgeLabels = !hit.item.showEdgeLabels; redrawAllStrokes(); return; }
             if (hit.pointKey === 'toggle_angles') { hit.item.showAngleLabels = !hit.item.showAngleLabels; redrawAllStrokes(); return; }
             if (hit.pointKey === 'toggle_circle_info') { hit.item.showCircleInfo = !hit.item.showCircleInfo; redrawAllStrokes(); return; }
-            
-            try { if (window.audio_eraser) { window.audio_eraser.currentTime = 0; window.audio_eraser.play(); } } catch(err){}
             
             isMoving = true; 
             selectedItem = hit.item; 
@@ -2534,4 +2529,5 @@ if (helpBtn && helpModal) {
 
 // --- BAŞLANGIÇ ---
 window.addEventListener('load', resizeCanvas);
+
 window.addEventListener('resize', resizeCanvas);
