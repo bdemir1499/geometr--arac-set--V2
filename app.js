@@ -1,11 +1,3 @@
-// --- app.js (TAM DÜZELTİLMİŞ SÜRÜM) ---
-
-// --- SESLER ---
-window.audio_click = new Audio('sesler/point-smooth-beep-230573.mp3');
-let audio_click_src_set = false; 
-window.audio_undo = new Audio('sesler/080918_bolt-sliding-back-4-39863 (3).mp3');
-window.audio_draw = new Audio('sesler/drawing-a-line-69277.mp3'); 
-window.audio_eraser = new Audio('sesler/pencil-eraser-107852.mp3');
 
 // --- KANVAS AYARLARI ---
 const canvas = document.getElementById('drawing-canvas');
@@ -17,11 +9,23 @@ const fileInput = document.getElementById('file-input');
 
 // --- app.js (DÜZELTİLMİŞ BAŞLANGIÇ BÖLÜMÜ) ---
 
-// --- SESLER ---
-window.audio_click = new Audio('sesler/point-smooth-beep-230573.mp3'); 
-window.audio_undo = new Audio('sesler/080918_bolt-sliding-back-4-39863 (3).mp3');
-window.audio_draw = new Audio('sesler/drawing-a-line-69277.mp3'); 
-window.audio_eraser = new Audio('sesler/pencil-eraser-107852.mp3');
+// --- SESLER (TÜMÜ İPTAL EDİLDİ / SESSİZ MOD) ---
+// Gerçek ses dosyaları yerine, hiçbir iş yapmayan "sahte" bir oynatıcı tanımlıyoruz.
+// Bu sayede alt satırlardaki hiçbir kodu silmenize gerek kalmaz, hepsi sessizce çalışır.
+
+const silentAudio = { 
+    play: function() {},   // Çal komutu gelirse: Hiçbir şey yapma.
+    pause: function() {},  // Durdur komutu gelirse: Hiçbir şey yapma.
+    currentTime: 0,        // Süre ayarı gelirse: Kabul et ama işleme.
+    src: "" 
+};
+
+window.audio_click = silentAudio;
+let audio_click_src_set = true; // Hata vermemesi için "ayarlandı" sayıyoruz.
+window.audio_undo = silentAudio;
+window.audio_draw = silentAudio;
+window.audio_eraser = silentAudio;
+
 
 // --- DEĞİŞKENLER ---
 let isDrawing = false; 
@@ -31,7 +35,7 @@ let currentTool = 'none';
 let isPinching = false;           // İki parmakla yakınlaştırma aktif mi?
 let initialDistance = 0;          // Başlangıç parmak mesafesi (zoom için)
 let initialScale = 0;             // Başlangıçta seçili nesnenin genişliği
-let initialCenter = { x: 0, y: 0 }; // İki parmağın merkez noktası (pan için)
+let initialCenter = { x: 0, y:  0 }; // İki parmağın merkez noktası (pan için)
 let currentPenColor = '#FFFFFF'; 
 let currentPenWidth = 4;
 window.currentLineColor = '#FFFFFF'; // Varsayılan Renk: BEYAZ
@@ -215,13 +219,46 @@ function redrawAllStrokes() {
     for (const stroke of drawnStrokes) {
         if (stroke.type === 'pen') {
             ctx.beginPath();
-            ctx.moveTo(stroke.path[0].x, stroke.path[0].y);
-            for (let i = 1; i < stroke.path.length; i++) ctx.lineTo(stroke.path[i].x, stroke.path[i].y);
+            
+            const points = stroke.path;
+            
+            // Eğer nokta sayısı azsa (1 veya 2), düz çizgi yeterlidir
+            if (points.length < 3) {
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+            } else {
+                // --- YUMUŞATMA ALGORİTMASI (Quadratic Curve) ---
+                
+                // İlk noktaya git
+                ctx.moveTo(points[0].x, points[0].y);
+                
+                // Noktalar arasında döngü kur (Son 2 nokta hariç)
+                for (let i = 1; i < points.length - 2; i++) {
+                    const xc = (points[i].x + points[i + 1].x) / 2; // İki noktanın ortası (Kontrol Noktası)
+                    const yc = (points[i].y + points[i + 1].y) / 2;
+                    
+                    // Eğriyi çiz: Mevcut noktayı (points[i]) "bükme noktası" olarak kullan,
+                    // orta noktaya (xc, yc) kadar çiz.
+                    ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+                }
+                
+                // Son kalan 2 noktayı kavisli olarak birleştir
+                ctx.quadraticCurveTo(
+                    points[points.length - 2].x,
+                    points[points.length - 2].y,
+                    points[points.length - 1].x,
+                    points[points.length - 1].y
+                );
+            }
+
             ctx.strokeStyle = stroke.color;
             ctx.lineWidth = stroke.width;
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.lineCap = 'round'; 
+            ctx.lineJoin = 'round';
             ctx.stroke();
-        } 
+        }
 
         if (stroke.type === 'image') {
             ctx.save(); // Ayarları kaydet
@@ -991,13 +1028,6 @@ canvas.addEventListener('mousedown', (e) => {
             }
             // --- ETİKETLEME MANTIĞI SONU ---
 
-            
-            // --- TAŞIMA/DÖNDÜRME/BOYUTLANDIRMA MANTIĞI ---
-            if (window.audio_eraser) { 
-                window.audio_eraser.currentTime = 0;
-                window.audio_eraser.play();
-            }
-
             isMoving = true;
             selectedItem = hit.item;
             selectedPointKey = hit.pointKey; 
@@ -1071,21 +1101,14 @@ canvas.addEventListener('mousedown', (e) => {
             break;
             
         case 'point':
-            if (window.audio_click) {
-                window.audio_click.currentTime = 0;
-                window.audio_click.play();
-            }
-            isDrawing = false; 
+                        isDrawing = false; 
             drawnStrokes.push({ type: 'point', x: snapPos.x, y: snapPos.y, label: nextPointChar });
             nextPointChar = advanceChar(nextPointChar);
             redrawAllStrokes(); 
             break;
 
         case 'eraser':
-            if (window.audio_eraser) {
-                window.audio_eraser.currentTime = 0;
-                window.audio_eraser.play();
-            }
+            
             isDrawing = true; 
             break;
 
@@ -1185,10 +1208,7 @@ canvas.addEventListener('mousedown', (e) => {
                 
                 window.PolygonTool.handleDrawClick(null, currentType); // YENİ KOD
                 
-                if (window.audio_click) {
-                    window.audio_click.currentTime = 0;
-                    window.audio_click.play();
-                }
+               
             }
             break;
         // --- ÇOKGEN BLOĞU SONU ---
@@ -1491,11 +1511,7 @@ canvas.addEventListener('mouseup', () => {
 
     if (currentTool === 'move' && isMoving) {
         // Taşıma sesini durdur
-        if (window.audio_eraser) { 
-            window.audio_eraser.pause();
-            window.audio_eraser.currentTime = 0;
-        }
-
+   
         isMoving = false;
         selectedPointKey = null;
         rotationPivot = null;
@@ -1601,11 +1617,7 @@ canvas.addEventListener('mouseup', () => {
 
     // 2. Silgiyi Otomatik Kapat ve Temizle
     if (currentTool === 'eraser') {
-        // ... (Silgi mantığınız aynı kalır) ...
-        if (isDrawing && window.audio_eraser) { 
-            window.audio_eraser.pause();
-            window.audio_eraser.currentTime = 0;
-        }
+        
         isDrawingLine = false; 
         isDrawingInfinityLine = false; 
         isDrawingSegment = false; 
@@ -1627,14 +1639,7 @@ canvas.addEventListener('mouseup', () => {
     snapHoverTimer = null;
 });
 
-// --- DOKUNMATİK OLAYLARI (TOUCH) ---
 
-// --- DOKUNMATİK BAŞLANGIÇ (TOUCHSTART) ---
-// --- app.js: DÜZELTİLMİŞ TOUCHSTART BLOĞU ---
-
-// --- app.js: DÜZELTİLMİŞ TOUCHSTART BLOĞU ---
-
-// --- app.js: TAM VE EKSİKSİZ TOUCHSTART BLOĞU ---
 
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault(); 
@@ -1677,9 +1682,7 @@ canvas.addEventListener('touchstart', (e) => {
             if (hit.pointKey === 'toggle_edges') { hit.item.showEdgeLabels = !hit.item.showEdgeLabels; redrawAllStrokes(); return; }
             if (hit.pointKey === 'toggle_angles') { hit.item.showAngleLabels = !hit.item.showAngleLabels; redrawAllStrokes(); return; }
             if (hit.pointKey === 'toggle_circle_info') { hit.item.showCircleInfo = !hit.item.showCircleInfo; redrawAllStrokes(); return; }
-            
-            try { if (window.audio_eraser) { window.audio_eraser.currentTime = 0; window.audio_eraser.play(); } } catch(err){}
-            
+                    
             isMoving = true; 
             selectedItem = hit.item; 
             selectedPointKey = hit.pointKey; 
@@ -1732,8 +1735,7 @@ canvas.addEventListener('touchstart', (e) => {
              polygonPreviewLabel.style.left = `${snapPos.x}px`;
              polygonPreviewLabel.style.top = `${snapPos.y - 40}px`;
              polygonPreviewLabel.innerText = "Merkez";
-             try { if (window.audio_click) { window.audio_click.currentTime = 0; window.audio_click.play(); } } catch(err){}
-        }
+                     }
         return; 
     }
 
@@ -1751,34 +1753,31 @@ if (['point', 'straightLine', 'line', 'segment', 'ray'].includes(currentTool)) {
         drawnStrokes.push({ type: 'pen', path: [snapPos], color: currentPenColor, width: currentPenWidth });
     }
     else if (currentTool === 'point') {
-        try { if (window.audio_click) { window.audio_click.currentTime = 0; window.audio_click.play(); } } catch(err){}
+        
         isDrawing = false;
         drawnStrokes.push({ type: 'point', x: snapPos.x, y: snapPos.y, label: nextPointChar });
         nextPointChar = advanceChar(nextPointChar);
         redrawAllStrokes();
     }
     else if (currentTool === 'eraser') {
-        try { if (window.audio_eraser) { window.audio_eraser.currentTime = 0; window.audio_eraser.play(); } } catch(err){}
+        
         isDrawing = true; 
     }
     else if (currentTool === 'straightLine') {
-        try { if (window.audio_click) window.audio_click.play(); } catch(err){}
+        
         isDrawingLine = true; lineStartPoint = snapPos;
         redrawAllStrokes(); drawDot(snapPos, currentLineColor);
     }
     else if (currentTool === 'line') {
-        try { if (window.audio_click) window.audio_click.play(); } catch(err){}
-        isDrawingInfinityLine = true; lineStartPoint = pos; 
+                isDrawingInfinityLine = true; lineStartPoint = pos; 
         redrawAllStrokes(); drawDot(pos, currentLineColor);
     }
     else if (currentTool === 'segment') {
-        try { if (window.audio_click) window.audio_click.play(); } catch(err){}
-        isDrawingSegment = true; lineStartPoint = snapPos; 
+                isDrawingSegment = true; lineStartPoint = snapPos; 
         redrawAllStrokes(); drawDot(snapPos, currentLineColor);
     }
     else if (currentTool === 'ray') {
-        try { if (window.audio_click) window.audio_click.play(); } catch(err){}
-        isDrawingRay = true; lineStartPoint = pos; 
+                isDrawingRay = true; lineStartPoint = pos; 
         redrawAllStrokes(); drawDot(pos, currentLineColor);
     }
 });
@@ -2120,7 +2119,9 @@ canvas.addEventListener('touchmove', (e) => {
     }
 });
 
-canvas.addEventListener('touchend', () => {
+canvas.addEventListener('touchend', (e) => { 
+    if (e && e.cancelable) e.preventDefault();
+
 
 // --- 3. KOPYALAMA İŞLEMİ (DOKUNMATİK BİTİŞ) ---
     if (currentTool === 'snapshot' && snapshotStart) {
@@ -2303,12 +2304,7 @@ if (isPinching) {
 
     // 1. Taşıma Durdur
     if (currentTool === 'move' && isMoving) {
-        // Taşıma sesini durdur
-        if (window.audio_eraser) { 
-            window.audio_eraser.pause();
-            window.audio_eraser.currentTime = 0;
-        }
-
+        
         isMoving = false;
         selectedPointKey = null;
         rotationPivot = null;
@@ -2405,7 +2401,7 @@ if (isPinching) {
 
     // 2. Silgi Temizle
     if (currentTool === 'eraser') {
-        if (isDrawing && window.audio_eraser) { window.audio_eraser.pause(); window.audio_eraser.currentTime = 0; }
+        
         isDrawing = false; setActiveTool('none'); return; 
     }
 
@@ -2462,6 +2458,17 @@ if (isPinching) {
 
     isDrawing = false; snapTarget = null; snapIndicator.style.display = 'none';
 });
+
+// --- TOUCHCANCEL (ARAMA GELİNCE ÇİZİMİ İPTAL ETME) ---
+canvas.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    // İşlemi iptal et ve temizle
+    isDrawing = false;
+    isMoving = false;
+    snapshotStart = null;
+    snapTarget = null;
+    snapIndicator.style.display = 'none';
+}, { passive: false });
 
 // --- YAPIŞTIRMA (PASTE) DESTEĞİ (CTRL+V) ---
 window.addEventListener('paste', (e) => {
@@ -2763,5 +2770,25 @@ document.addEventListener('click', function(e) {
     }
 }, true); // 'true' parametresi olayı en başta yakalamasını sağlar (Capture Phase)
 // --- BAŞLANGIÇ ---
+// --- AKILLI EKRAN BOYUTLANDIRMA (ADRES ÇUBUĞU ZIPLAMASINI ENGELLER) ---
+let lastWindowWidth = window.innerWidth;
+
+function resizeCanvas() {
+    const newWidth = window.innerWidth;
+    const newHeight = window.innerHeight;
+
+    // Eğer genişlik değişmediyse (Sadece adres çubuğu inip kalktıysa) işlem yapma!
+    // Bu sayede çizim sırasında ekranın titremesini/zıplamasını engelleriz.
+    if (newWidth === lastWindowWidth && Math.abs(newHeight - canvas.height) < 150) {
+        return; 
+    }
+
+    // Gerçekten ekran döndüyse veya boyut değiştiyse güncelle
+    lastWindowWidth = newWidth;
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+    redrawAllStrokes();
+}
+
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
