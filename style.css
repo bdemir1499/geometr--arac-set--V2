@@ -33,31 +33,6 @@ canvas {
     border: none; /* Çerçeve varsa koordinatı bozar, sıfırladık */
     outline: none;
     z-index: 1;
-}/* --- BURADAN AŞAĞISI SİZİN ESKİ KODLARINIZ OLSUN --- */
-
-
-/* Temel Sıfırlamalar */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #0d0d2b; /* Koyu cyberpunk arka plan */
-    color: #00ffcc; /* Neon metin rengi */
-    overflow: hidden; /* Kaydırmayı engelle */
-}
-
-/* Ana Çizim Alanı */
-#drawing-canvas {
-    display: block;
-    background-color: #0a0a1f; /* Kanvas için biraz daha koyu */
-    width: 100vw;
-    height: 100vh;
-    touch-action: none;        /* Tarayıcının varsayılan dokunmatik hareketlerini (kaydırma/zoom) kapat */
-    overscroll-behavior: none; /* Sayfa sonuna gelince sekme efektini kapat */
 }
 
 /* Panellerin Genel Stili */
