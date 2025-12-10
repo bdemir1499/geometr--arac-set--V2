@@ -1,38 +1,39 @@
-/* --- EVRENSEL DOKUNMATİK VE SEÇİM AYARLARI --- */
-/* --- SIFIRLAMA VE SABİTLEME (KESİN ÇÖZÜM) --- */
+/* --- SIFIRLAMA VE TAM EKRAN (KESİN ÇÖZÜM) --- */
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    box-sizing: border-box; /* Kenarlıkları boyuta dahil et */
     
-    /* Seçimi ve menüleri engelle */
+    /* Seçimi engelle */
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    touch-action: none; /* Tarayıcının kaydırma/zoom yapmasını engeller */
+    touch-action: none;
 }
 
 body, html {
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Asla kaydırma çubuğu çıkmasın */
-    position: fixed;  /* Sayfayı ekrana çivile */
+    overflow: hidden;
+    position: fixed; /* Sayfayı kilitler */
     top: 0;
     left: 0;
-    background-color: #000; /* Çentikli telefonlarda boşluk kalırsa siyah olsun */
+    background-color: #000;
 }
 
-/* Canvas'ı tam oturt */
 canvas {
-    display: block; /* Kaydırma çubuğu oluşmasını engeller */
+    display: block;
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
+    border: none; /* Çerçeve varsa koordinatı bozar, sıfırladık */
+    outline: none;
     z-index: 1;
-}
-/* --- BURADAN AŞAĞISI SİZİN ESKİ KODLARINIZ OLSUN --- */
+}/* --- BURADAN AŞAĞISI SİZİN ESKİ KODLARINIZ OLSUN --- */
 
 
 /* Temel Sıfırlamalar */
