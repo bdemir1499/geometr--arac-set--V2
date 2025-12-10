@@ -161,54 +161,34 @@ function resizeCanvas() {
     redrawAllStrokes();
 }
 
+// --- KOORDİNAT HESAPLAMA (KAYMAYI ÖNLEYEN KESİN ÇÖZÜM) ---
 function getEventPosition(e) {
+    // 1. Canvas'ın ekrandaki tam yerini ve boyutunu al
+    const rect = canvas.getBoundingClientRect();
+    
+    let clientX, clientY;
+
+    // Dokunmatik mi Mouse mu kontrol et
     if (e.touches && e.touches.length > 0) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } 
+    // Eğer parmak kaldırıldıysa (touchend), son konumu changedTouches'dan al
+    else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    } 
+    else {
+        clientX = e.clientX;
+        clientY = e.clientY;
     }
-    return { x: e.clientX, y: e.clientY };
-}
 
-function drawDot(pos, color = '#00FFCC') {
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 5, 0, 2 * Math.PI); 
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
-function drawLabel(text, pos, color = '#FF69B4') {
-    ctx.font = 'bold 16px Arial';
-    ctx.fillStyle = color; 
-    ctx.fillText(text, pos.x + 8, pos.y + 5);
-}
-
-function drawInfinityLine(p1, p2, color, width, isRay = false) {
-    const INFINITY = 5000;
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const mag = Math.sqrt(dx * dx + dy * dy);
-    if (mag === 0) return { ux: 0, uy: 0 }; 
-    const ux = dx / mag;
-    const uy = dy / mag;
-    const drawP1 = isRay ? p1 : { x: p1.x - ux * INFINITY, y: p1.y - uy * INFINITY };
-    const drawP2 = { x: p1.x + ux * INFINITY, y: p1.y + uy * INFINITY };
-    ctx.beginPath();
-    ctx.moveTo(drawP1.x, drawP1.y);
-    ctx.lineTo(drawP2.x, drawP2.y);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.stroke();
-    return { ux, uy }; 
-}
-
-window.bringToolToFront = function(clickedElement) {
-    const tools = [
-        window.RulerTool ? window.RulerTool.rulerElement : null,
-        window.GonyeTool ? window.GonyeTool.gonyeElement : null,
-        window.AciolcerTool ? window.AciolcerTool.aciolcerElement : null,
-        window.PergelTool ? window.PergelTool.pergelElement : null
-    ];
-    tools.forEach(tool => { if (tool) tool.style.zIndex = 5; });
-    if (clickedElement) clickedElement.style.zIndex = 6;
+    // 2. FORMÜL: (Tıklanan Yer - Canvas'ın Başlangıç Yeri)
+    // Ayrıca CSS boyutu ile Canvas çözünürlüğü arasındaki farkı (Scale) oranla
+    return { 
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
 }
 
 // --- ÇİZİM FONKSİYONU (REDRAW) ---
