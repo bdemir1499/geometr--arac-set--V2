@@ -164,7 +164,9 @@ function resizeCanvas() {
 // --- app.js ---
 
 function getEventPosition(e) {
-    // 1. Canvas'ın o anki görsel boyutunu ve konumunu al
+    // DÜZELTME: Parmak kalkarken (touchend) yeni hesap yapma, son konumu kullan (Zıplamayı Önler)
+    if (e.type === 'touchend' || e.type === 'touchcancel') return currentMousePos;
+
     const rect = canvas.getBoundingClientRect();
     
     let clientX, clientY;
@@ -2812,6 +2814,13 @@ function resizeCanvas() {
 // Hem yüklenince, hem ekran dönünce, hem de adres çubuğu oynayınca çalıştır
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
+// DÜZELTME: Fiziksel araçların (Cetvel vb.) butonlarından parmak çekince oluşan zıplamayı engelle
+document.addEventListener('touchend', (e) => {
+    if (e.target.closest('.ruler-container, .gonye-container, .aciolcer-container, #compass-container')) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
 window.addEventListener('orientationchange', () => {
     setTimeout(resizeCanvas, 200); // Ekran dönmesi bitince çalıştır
 });
