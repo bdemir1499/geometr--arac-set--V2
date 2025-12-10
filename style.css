@@ -1,3 +1,37 @@
+/* --- EVRENSEL DOKUNMATİK VE SEÇİM AYARLARI --- */
+* {
+    /* Metin seçimini engelle (Uygulama hissi verir) */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    /* Dokunmatik gecikmelerini kaldır */
+    -webkit-tap-highlight-color: transparent;
+    
+    /* Akıllı tahtalarda sürüklemeyi tarayıcının yönetmesini engelle */
+    touch-action: none; 
+}
+
+body, html {
+    /* Kaydırmayı ve lastik efektini kapat */
+    overscroll-behavior: none;
+    overflow: hidden; 
+    width: 100%;
+    height: 100%;
+    position: fixed; /* iOS'ta sayfanın oynamasını engeller */
+}
+
+/* Input alanlarına (Metin kutusu vs.) tekrar seçim izni ver */
+input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: auto;
+}
+
+/* --- BURADAN AŞAĞISI SİZİN ESKİ KODLARINIZ OLSUN --- */
+
+
 /* Temel Sıfırlamalar */
 * {
     margin: 0;
@@ -755,4 +789,39 @@ body.cursor-snapshot {
     border-radius: 4px;
     cursor: pointer;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* --- PDF KAPAT BUTONU (SAĞ PANELİN SOLUNDA - GÜNCELLENMİŞ) --- */
+.pdf-close-btn {
+    position: fixed !important; 
+    top: 15px !important;        /* Sayfanın tepesinden boşluk */
+    right: 150px !important;     /* Sağdan 120px içeride (Panelden iyice uzaklaşır) */
+    
+    width: 50px;
+    height: 50px;
+    background-color: #ff0000;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    
+    z-index: 9999 !important; 
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    transition: transform 0.1s;
+}
+
+.pdf-close-btn:active {
+    transform: scale(0.95);
+}
+
+.pdf-close-btn.hidden {
+    display: none !important;
 }
