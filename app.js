@@ -163,29 +163,22 @@ function resizeCanvas() {
 
 // --- KOORDİNAT HESAPLAMA (KAYMAYI ÖNLEYEN KESİN ÇÖZÜM) ---
 function getEventPosition(e) {
-    // 1. Canvas'ın ekrandaki tam yerini ve boyutunu al
     const rect = canvas.getBoundingClientRect();
-    
     let clientX, clientY;
 
-    // Dokunmatik mi Mouse mu kontrol et
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
-    } 
-    // Eğer parmak kaldırıldıysa (touchend), son konumu changedTouches'dan al
-    else if (e.changedTouches && e.changedTouches.length > 0) {
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
         clientX = e.changedTouches[0].clientX;
         clientY = e.changedTouches[0].clientY;
-    } 
-    else {
+    } else {
         clientX = e.clientX;
         clientY = e.clientY;
     }
 
-    // 2. FORMÜL: (Tıklanan Yer - Canvas'ın Başlangıç Yeri)
-    // Ayrıca CSS boyutu ile Canvas çözünürlüğü arasındaki farkı (Scale) oranla
     return { 
+        // CSS genişliği ile Canvas çözünürlüğü arasındaki farkı oranla (Scale)
         x: (clientX - rect.left) * (canvas.width / rect.width),
         y: (clientY - rect.top) * (canvas.height / rect.height)
     };
@@ -2769,6 +2762,24 @@ function resizeCanvas() {
     canvas.height = newHeight;
     redrawAllStrokes();
 }
+
+// --- DOKUNMATİK KAYMASINI ENGELLEYEN EK ---
+// Bu kod, app.js'in en sonunda çalışarak touch olaylarını "passive: false" moduna zorlar.
+
+const canvasElement = document.getElementById('drawing-canvas');
+
+// Mevcut dinleyicileri etkilemeden, tarayıcı davranışını durdurmak için ek dinleyici:
+canvasElement.addEventListener('touchstart', function(e) {
+    if (e.target === canvasElement) {
+        e.preventDefault(); // Adres çubuğunu ve zoom'u engelle
+    }
+}, { passive: false });
+
+canvasElement.addEventListener('touchmove', function(e) {
+    if (e.target === canvasElement) {
+        e.preventDefault(); // Sayfa kaymasını engelle
+    }
+}, { passive: false });
 
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
