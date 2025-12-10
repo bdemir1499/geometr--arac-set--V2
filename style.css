@@ -1,34 +1,37 @@
 /* --- EVRENSEL DOKUNMATİK VE SEÇİM AYARLARI --- */
+/* --- SIFIRLAMA VE SABİTLEME (KESİN ÇÖZÜM) --- */
 * {
-    /* Metin seçimini engelle (Uygulama hissi verir) */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    
+    /* Seçimi ve menüleri engelle */
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-
-    /* Dokunmatik gecikmelerini kaldır */
     -webkit-tap-highlight-color: transparent;
-    
-    /* Akıllı tahtalarda sürüklemeyi tarayıcının yönetmesini engelle */
-    touch-action: none; 
+    touch-action: none; /* Tarayıcının kaydırma/zoom yapmasını engeller */
 }
 
 body, html {
-    /* Kaydırmayı ve lastik efektini kapat */
-    overscroll-behavior: none;
-    overflow: hidden; 
     width: 100%;
     height: 100%;
-    position: fixed; /* iOS'ta sayfanın oynamasını engeller */
+    overflow: hidden; /* Asla kaydırma çubuğu çıkmasın */
+    position: fixed;  /* Sayfayı ekrana çivile */
+    top: 0;
+    left: 0;
+    background-color: #000; /* Çentikli telefonlarda boşluk kalırsa siyah olsun */
 }
 
-/* Input alanlarına (Metin kutusu vs.) tekrar seçim izni ver */
-input, textarea {
-    -webkit-user-select: text;
-    user-select: text;
-    touch-action: auto;
+/* Canvas'ı tam oturt */
+canvas {
+    display: block; /* Kaydırma çubuğu oluşmasını engeller */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
-
 /* --- BURADAN AŞAĞISI SİZİN ESKİ KODLARINIZ OLSUN --- */
 
 
