@@ -2,15 +2,25 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>GEOMETRİ ARAÇ SETİ-V2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    
+    <title>GEOMETRİ ARAÇ SETİ-V2-EVRENSEL</title>
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ruler.css">
     <link rel="stylesheet" href="gonye.css">
     <link rel="stylesheet" href="aciolcer.css">
     <link rel="stylesheet" href="pergel.css">
-<link rel="stylesheet" href="cokgen.css"> </head>
+    <link rel="stylesheet" href="cokgen.css"> 
+    
+    <link rel="manifest" href="manifest.json">
+</head>
+
 <body>
 <div id="polygon-preview-label" class="polygon-label hidden"></div>
     <div id="compass-container" class="hidden">
@@ -97,6 +107,8 @@
         <div id="oyunlar-options" class="tool-options hidden">
             </div>
 
+
+
     </div> <div class="panel right-panel">
         <button id="btn-tool-color" class="tool-button">Araç Rengi: Siyah</button>
         <button id="btn-undo" class="tool-button">Geri Al</button>
@@ -132,7 +144,14 @@
     </div>
 
     <script src="pdf.min.js"></script>
-    <script src="app.js"></script>    
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+            .then(() => console.log("Uygulama hafızaya alındı (Offline Ready)"))
+            .catch(err => console.log("Hata:", err));
+        }
+    </script>
     <script src="ruler.js"></script>
     <script src="gonye.js"></script>
     <script src="aciolcer.js"></script>
@@ -140,6 +159,15 @@
     <script src="cokgen.js"></script>
     <script src="oyunlar.js"></script>
 
-</body>
+<button id="btn-close-pdf" class="pdf-close-btn hidden">
+        <span>PDF</span>
+        <span style="font-size: 16px; margin-top: -2px;">✖</span>
+    </button>
 
+    <script src="pdf.min.js"></script>
+    <script src="app.js"></script>    
+    </body>
+</html>
+
+</body>
 </html>
