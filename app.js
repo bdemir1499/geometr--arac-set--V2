@@ -161,11 +161,15 @@ function resizeCanvas() {
     redrawAllStrokes();
 }
 
-// --- KOORDİNAT HESAPLAMA (KAYMAYI ÖNLEYEN KESİN ÇÖZÜM) ---
+// --- app.js ---
+
 function getEventPosition(e) {
+    // 1. Canvas'ın o anki görsel boyutunu ve konumunu al
     const rect = canvas.getBoundingClientRect();
+    
     let clientX, clientY;
 
+    // Dokunmatik ve Mouse ayrımı
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -177,11 +181,54 @@ function getEventPosition(e) {
         clientY = e.clientY;
     }
 
+    // 2. HASSAS HESAPLAMA (ÖLÇEK DÜZELTMELİ)
+    // (Tıklanan Yer - Canvas Başlangıcı) * (İç Çözünürlük / Görsel Boyut)
     return { 
-        // CSS genişliği ile Canvas çözünürlüğü arasındaki farkı oranla (Scale)
         x: (clientX - rect.left) * (canvas.width / rect.width),
         y: (clientY - rect.top) * (canvas.height / rect.height)
     };
+}
+function drawDot(pos, color = '#00FFCC') {
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 5, 0, 2 * Math.PI); 
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+function drawLabel(text, pos, color = '#FF69B4') {
+    ctx.font = 'bold 16px Arial';
+    ctx.fillStyle = color; 
+    ctx.fillText(text, pos.x + 8, pos.y + 5);
+}
+
+function drawInfinityLine(p1, p2, color, width, isRay = false) {
+    const INFINITY = 5000;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const mag = Math.sqrt(dx * dx + dy * dy);
+    if (mag === 0) return { ux: 0, uy: 0 }; 
+    const ux = dx / mag;
+    const uy = dy / mag;
+    const drawP1 = isRay ? p1 : { x: p1.x - ux * INFINITY, y: p1.y - uy * INFINITY };
+    const drawP2 = { x: p1.x + ux * INFINITY, y: p1.y + uy * INFINITY };
+    ctx.beginPath();
+    ctx.moveTo(drawP1.x, drawP1.y);
+    ctx.lineTo(drawP2.x, drawP2.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+    return { ux, uy }; 
+}
+
+window.bringToolToFront = function(clickedElement) {
+    const tools = [
+        window.RulerTool ? window.RulerTool.rulerElement : null,
+        window.GonyeTool ? window.GonyeTool.gonyeElement : null,
+        window.AciolcerTool ? window.AciolcerTool.aciolcerElement : null,
+        window.PergelTool ? window.PergelTool.pergelElement : null
+    ];
+    tools.forEach(tool => { if (tool) tool.style.zIndex = 5; });
+    if (clickedElement) clickedElement.style.zIndex = 6;
 }
 
 // --- ÇİZİM FONKSİYONU (REDRAW) ---
@@ -2746,40 +2793,32 @@ document.addEventListener('click', function(e) {
 // --- AKILLI EKRAN BOYUTLANDIRMA (ADRES ÇUBUĞU ZIPLAMASINI ENGELLER) ---
 let lastWindowWidth = window.innerWidth;
 
+// --- EKRAN BOYUTLANDIRMA (KESİN UYUM) ---
 function resizeCanvas() {
-    const newWidth = window.innerWidth;
-    const newHeight = window.innerHeight;
+    // Tarayıcının iç genişlik ve yüksekliğini al
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-    // Eğer genişlik değişmediyse (Sadece adres çubuğu inip kalktıysa) işlem yapma!
-    // Bu sayede çizim sırasında ekranın titremesini/zıplamasını engelleriz.
-    if (newWidth === lastWindowWidth && Math.abs(newHeight - canvas.height) < 150) {
-        return; 
+    // Canvas'ın HTML özelliğini (iç çözünürlüğünü) güncelle
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Boyut değişince çizimler silinir, onları tekrar çiz
+        redrawAllStrokes();
     }
-
-    // Gerçekten ekran döndüyse veya boyut değiştiyse güncelle
-    lastWindowWidth = newWidth;
-    canvas.width = newWidth;
-    canvas.height = newHeight;
-    redrawAllStrokes();
 }
 
-// --- DOKUNMATİK KAYMASINI ENGELLEYEN EK ---
-// Bu kod, app.js'in en sonunda çalışarak touch olaylarını "passive: false" moduna zorlar.
-
-const canvasElement = document.getElementById('drawing-canvas');
-
-// Mevcut dinleyicileri etkilemeden, tarayıcı davranışını durdurmak için ek dinleyici:
-canvasElement.addEventListener('touchstart', function(e) {
-    if (e.target === canvasElement) {
-        e.preventDefault(); // Adres çubuğunu ve zoom'u engelle
-    }
-}, { passive: false });
-
-canvasElement.addEventListener('touchmove', function(e) {
-    if (e.target === canvasElement) {
-        e.preventDefault(); // Sayfa kaymasını engelle
-    }
-}, { passive: false });
-
+// Hem yüklenince, hem ekran dönünce, hem de adres çubuğu oynayınca çalıştır
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 200); // Ekran dönmesi bitince çalıştır
+});
+
+// Mobil tarayıcılarda adres çubuğu gizlenince oluşan boşluğu doldurmak için:
+setInterval(() => {
+    if (Math.abs(canvas.height - window.innerHeight) > 10) {
+        resizeCanvas();
+    }
+}, 1000); // Her saniye kontrol et (Performansı etkilemez)
