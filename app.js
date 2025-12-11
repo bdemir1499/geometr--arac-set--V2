@@ -1881,6 +1881,9 @@ canvas.addEventListener('touchmove', (e) => {
         
         // Artık currentMousePos güncel olduğu için hesaplama doğru çalışır
         const w = currentMousePos.x - snapshotStart.x;
+if (isDrawing) {
+        window.lastValidDrawPos = { x: currentMousePos.x, y: currentMousePos.y };
+    }
         const h = currentMousePos.y - snapshotStart.y;
         
         // Kırmızı Kesikli Kutu
@@ -2186,7 +2189,21 @@ canvas.addEventListener('touchend', (e) => {
 
 // --- 3. KOPYALAMA İŞLEMİ (DOKUNMATİK BİTİŞ) ---
     if (currentTool === 'snapshot' && snapshotStart) {
-        const endPos = snapTarget || currentMousePos;
+        // --- ESKİ 'const endPos...' SATIRINI SİL, YERİNE BUNU YAPIŞTIR ---
+
+    let finalPosition = currentMousePos;
+
+    // Eğer çizim yapıldıysa ve elimizde güvenli bir yedek konum varsa onu kullan
+    // (Tabletin uydurduğu son sıçrama noktasını kullanma)
+    if (window.lastValidDrawPos && window.lastValidDrawPos.x !== 0) {
+        finalPosition = window.lastValidDrawPos;
+    }
+
+    // snapTarget (mıknatıs) varsa öncelik onundur, yoksa güvenli konumu al
+    const endPos = snapTarget || finalPosition;
+
+// ---------------------------------------------------------------
+// (Kodun geri kalanı aynen devam eder: if (isDrawingLine && lineStartPoint) ... )
         
         // Seçilen alanı hesapla
         let rawX = Math.min(snapshotStart.x, endPos.x);
