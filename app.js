@@ -1,3 +1,8 @@
+// --- app.js EN ÜST SATIRINA ---
+// Hareket geçmişini tutacak liste (Sıçrama önleyici tampon)
+window.touchHistoryBuffer = [];
+// ------------------------------+
+
 // --- app.js EN ÜST SATIRINA YAPIŞTIR ---
 // Tablet Sıçrama Önleyici: Son güvenli konumu sakla
 window.lastSafeDrawPos = { x: 0, y: 0 };
@@ -6,6 +11,7 @@ document.addEventListener('touchmove', function(e) {
     // Sadece tek parmakla çizim yaparken kayıt al
     if (e.touches.length === 1) {
         window.lastSafeDrawPos = {
+
             x: e.touches[0].clientX,
             y: e.touches[0].clientY
         };
@@ -1851,6 +1857,21 @@ canvas.addEventListener('touchmove', (e) => {
     currentMousePos = pos; 
     const endPos = snapTarget || currentMousePos;
 
+    // --- BURAYI EKLEDİM (TAM BURADA OLMALI) ---
+    // Sıçrama Önleyici: Geçmiş hareketleri hafızaya al
+    if (isDrawing) {
+        // Eğer liste henüz yoksa oluştur (Hata önleyici)
+        if (!window.touchHistoryBuffer) window.touchHistoryBuffer = [];
+
+        window.touchHistoryBuffer.push({ x: currentMousePos.x, y: currentMousePos.y });
+        
+        // Sadece son 5 noktayı tutalım, fazlasını atalım (Kuyruk yapısı)
+        if (window.touchHistoryBuffer.length > 5) {
+            window.touchHistoryBuffer.shift();
+        }
+    }
+    // ------------------------------------------
+
     // 2. PINCH ZOOM (İKİ PARMAK)
     if (isPinching) {
         const p1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -1879,11 +1900,8 @@ canvas.addEventListener('touchmove', (e) => {
     else if (currentTool === 'snapshot' && snapshotStart) {
         redrawAllStrokes(); // Ekranı temizle
         
-        // Artık currentMousePos güncel olduğu için hesaplama doğru çalışır
+        // (Buradaki hatalı kod temizlendi, düzgün hesaplama:)
         const w = currentMousePos.x - snapshotStart.x;
-if (isDrawing) {
-        window.lastValidDrawPos = { x: currentMousePos.x, y: currentMousePos.y };
-    }
         const h = currentMousePos.y - snapshotStart.y;
         
         // Kırmızı Kesikli Kutu
@@ -1898,7 +1916,10 @@ if (isDrawing) {
     }
 
     // Araç Kontrolleri (Engelleyiciler)
+    // NOT: Fiziki araçlar bu satırdan dönüyor ama yukarıdaki "historyBuffer"
+    // bu satırdan ÖNCE çalıştığı için veriyi başarıyla kaydetmiş oluyor.
     if (currentTool === 'ruler' || currentTool === 'gonye' || currentTool === 'aciolcer' || currentTool === 'pergel') return;
+    
     if (currentTool === 'none') return;
 
     // 4. TAŞIMA (MOVE) MANTIĞI
@@ -1956,7 +1977,7 @@ if (isDrawing) {
         redrawAllStrokes();
         return; 
     }
-
+});
     // Akıllı Yakalama
     let snapTargetLocal = null;
     const canSnap = (currentTool === 'point' || currentTool === 'straightLine' || currentTool === 'pen' || currentTool === 'segment' || currentTool.startsWith('draw_polygon_'));
@@ -2186,6 +2207,24 @@ if (isDrawing) {
 canvas.addEventListener('touchend', (e) => { 
     if (e && e.cancelable) e.preventDefault();
 
+let finalSafePos = currentMousePos;
+
+    // Eğer geçmiş verisi varsa ve güvenilir sayıdaysa (En az 3)
+    if (window.touchHistoryBuffer && window.touchHistoryBuffer.length >= 3) {
+        // Sondan 2. noktayı al (Son nokta "zıplama" anıdır, çöp)
+        finalSafePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 2];
+    } 
+    // Eğer buffer azsa ama yine de varsa en eskisini al
+    else if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+        finalSafePos = window.touchHistoryBuffer[0];
+    }
+    
+    // Güvenli noktayı kullan (Bu 'endPos' artık tüm kod boyunca geçerli olacak)
+    const endPos = snapTarget || finalSafePos;
+    
+    // Listeyi temizle
+    window.touchHistoryBuffer = [];
+
 
 // --- 3. KOPYALAMA İŞLEMİ (DOKUNMATİK BİTİŞ) ---
     if (currentTool === 'snapshot' && snapshotStart) {
@@ -2272,7 +2311,7 @@ canvas.addEventListener('touchend', (e) => {
 
     // 3. AKILLI KIRPMA ve TEMİZLEME (DOKUNMATİK BİTİŞ)
     if (currentTool === 'snapshot' && snapshotStart) {
-        const endPos = snapTarget || currentMousePos;
+        
         
         // 1. Kullanıcının çizdiği kaba kutuyu al
         let rawX = Math.min(snapshotStart.x, endPos.x);
