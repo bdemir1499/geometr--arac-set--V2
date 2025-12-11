@@ -1,4 +1,17 @@
-// --- APP.JS EN BAŞINA EKLEYİN ---
+// --- app.js EN ÜST SATIRINA YAPIŞTIR ---
+// Tablet Sıçrama Önleyici: Son güvenli konumu sakla
+window.lastSafeDrawPos = { x: 0, y: 0 };
+
+document.addEventListener('touchmove', function(e) {
+    // Sadece tek parmakla çizim yaparken kayıt al
+    if (e.touches.length === 1) {
+        window.lastSafeDrawPos = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        };
+    }
+}, { passive: false });
+// ---------------------------------------
 // Android/iOS sıçrama önleyici (Ghost Click Blocker)
 let lastTouchTime = 0;
 document.addEventListener('touchstart', function() { lastTouchTime = new Date().getTime(); }, {passive: false});
