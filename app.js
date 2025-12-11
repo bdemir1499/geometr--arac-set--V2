@@ -1,4 +1,16 @@
-
+// --- APP.JS EN BAŞINA EKLEYİN ---
+// Android/iOS sıçrama önleyici (Ghost Click Blocker)
+let lastTouchTime = 0;
+document.addEventListener('touchstart', function() { lastTouchTime = new Date().getTime(); }, {passive: false});
+document.addEventListener('mousedown', function(e) {
+    const now = new Date().getTime();
+    // Eğer son 600ms içinde dokunmatik işlem yapıldıysa, gelen Mouse olayını iptal et
+    if (now - lastTouchTime < 600) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+}, true); // 'true' burası için önemlidir (Capture phase)
 // --- KANVAS AYARLARI ---
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
@@ -2335,9 +2347,24 @@ if (isPinching) {
     redrawAllStrokes();
     return;
 }
-// ... (Mevcut diğer touchend mantığı devam eder)
-    if (currentTool === 'ruler' || currentTool === 'gonye' || currentTool === 'aciolcer' || currentTool === 'pergel') return;
-
+if (currentTool === 'ruler' || currentTool === 'gonye' || currentTool === 'aciolcer' || currentTool === 'pergel') {
+    // 1. Hayalet olayları engelle
+    if (e && e.cancelable) e.preventDefault();
+    
+    // 2. TÜM HAREKET BAYRAKLARINI ZORLA İNDİR
+    isDrawing = false;
+    isMoving = false;      
+    if (typeof isRotating !== 'undefined') isRotating = false;   
+    if (typeof isResizing !== 'undefined') isResizing = false;   
+    
+    // 3. Çizim yolunu kapat (Sıçramayı keser)
+    if (ctx) ctx.beginPath();
+    
+    // 4. Son durumu ekrana çiz
+    redrawAllStrokes(); 
+    
+    return;
+}
     // 1. Taşıma Durdur
     if (currentTool === 'move' && isMoving) {
         
