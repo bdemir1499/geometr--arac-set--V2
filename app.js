@@ -1297,7 +1297,21 @@ canvas.addEventListener('mousemove', (e) => {
     }
 
     // Araç Kontrolü
-    if (currentTool === 'ruler' || currentTool === 'gonye' || currentTool === 'aciolcer' || currentTool === 'pergel') return;
+    // --- ESKİ HATALI SATIRI SİL, YERİNE BUNU YAPIŞTIR ---
+if (currentTool === 'ruler' || currentTool === 'gonye' || currentTool === 'aciolcer' || currentTool === 'pergel') {
+    // 1. Çizim bayrağını indir
+    isDrawing = false;
+    
+    // 2. Yolu mutlaka kapat (Sıçramayı engelleyen asıl komut)
+    if (ctx) ctx.beginPath();
+
+    // 3. Varsa bu araçların kendi özel sürükleme/döndürme bayraklarını da sıfırla
+    // (Kodunda bu değişkenlerin adları farklı olabilir ama mantık budur)
+    // isRotating = false; 
+    // isDraggingRuler = false; 
+
+    return; // ŞİMDİ çıkış yapabilirsin
+}
     if (currentTool === 'none') return;
     
     const pos = getEventPosition(e);
