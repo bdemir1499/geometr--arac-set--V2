@@ -2478,7 +2478,10 @@ if (isPinching) {
         }
     }
 
-    isDrawing = false; snapTarget = null; snapIndicator.style.display = 'none';
+    isDrawing = false;
+if (ctx) ctx.beginPath(); 
+snapTarget = null; 
+snapIndicator.style.display = 'none';
 });
 
 // --- TOUCHCANCEL (ARAMA GELİNCE ÇİZİMİ İPTAL ETME) ---
