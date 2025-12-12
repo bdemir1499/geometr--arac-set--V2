@@ -320,10 +320,12 @@ toggle: function() {
             case 'drawing':
                 // --- 1. EKLENECEK KOD (Sıçrama Önleyici) ---
                 let safePos = currPos;
-                if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
-                     // Son 5-6 kare öncesine bakarak parmak kalkmadan önceki güvenli konumu al
-                     safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
-                }
+                if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 6) {
+     // Tabletin hızına göre 6 ile 8 arasında bir değer idealdir. 6'da bırakalım.
+     // Not: Değişken adı dosyaya göre 'pos', 'currPos' veya 'safePos' olabilir.
+     // Sadece aşağıdaki indeks mantığını kontrol edin:
+     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6]; 
+}
                 // -------------------------------------------
 
                 // --- 2. DEĞİŞTİRİLEN KISIM ---
