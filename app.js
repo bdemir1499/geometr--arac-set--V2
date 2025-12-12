@@ -1859,17 +1859,15 @@ canvas.addEventListener('touchmove', (e) => {
     currentMousePos = pos; 
     const endPos = snapTarget || currentMousePos;
 
-    // --- Time Machine: Sıçrama Engelleyici Tampon ---
-    if (isDrawing) {
-        if (!window.touchHistoryBuffer) window.touchHistoryBuffer = [];
-        
-        window.touchHistoryBuffer.push({ x: currentMousePos.x, y: currentMousePos.y });
-        
-        // ÖNCEKİ KODDA BURASI 5 İDİ, ŞİMDİ 12 YAPIYORUZ
-        // (Daha geriye gidebilmek için hafızayı arttırdık)
-        if (window.touchHistoryBuffer.length > 12) {
-            window.touchHistoryBuffer.shift();
-        }
+    // --- Time Machine: Sıçrama Engelleyici Tampon (SÜREKLİ KAYIT) ---
+    // (Artık isDrawing kontrolü yok, her zaman kayıt alıyor)
+    if (!window.touchHistoryBuffer) window.touchHistoryBuffer = [];
+    
+    window.touchHistoryBuffer.push({ x: currentMousePos.x, y: currentMousePos.y });
+    
+    // Hafızayı 5'ten 12'ye çıkardık (Daha geriye sarabilmek için)
+    if (window.touchHistoryBuffer.length > 12) {
+        window.touchHistoryBuffer.shift();
     }
     // -----------------------------------------------------------
 
@@ -2185,9 +2183,8 @@ canvas.addEventListener('touchend', (e) => {
     // Eğer elimizde yeterince geçmiş verisi varsa (En az 6 kare)
     if (buffer && buffer.length >= 6) {
         // Sondan 5. veya 6. noktayı al!
-        // (Son 5 kare genellikle "kaldırma/titreme" anıdır, hepsini atlıyoruz)
         finalSafePos = buffer[buffer.length - 6]; 
-    } 
+    }
     // Eğer buffer azsa (çok kısa çizim) en başa dön
     else if (buffer && buffer.length > 0) {
         finalSafePos = buffer[0];
