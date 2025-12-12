@@ -425,9 +425,12 @@ window.audio_draw.play();
         // --- DÜZELTME: Sıçrama Önleyici (Buffer) ---
         let pos = this.getEventPos(e);
         // Eğer dokunmatik geçmişi varsa ve yeterince veri biriktiyse, son 5. kareyi (güvenli anı) kullan
-        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
-             pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
-        }
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 6) {
+     // Tabletin hızına göre 6 ile 8 arasında bir değer idealdir. 6'da bırakalım.
+     // Not: Değişken adı dosyaya göre 'pos', 'currPos' veya 'safePos' olabilir.
+     // Sadece aşağıdaki indeks mantığını kontrol edin:
+     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6]; 
+}
         // --- DÜZELTME SONU ---
     const centerX = this.state.x + (this.state.width / 2);
     const centerY = this.state.y + 30;
