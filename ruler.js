@@ -422,7 +422,13 @@ window.audio_draw.play();
     // 8. & 9. Madde: Çizim Tutamacı Mantığı (Çalışan Kod)
     handleDraw: function(e) {
         
-        const pos = this.getEventPos(e);
+        // --- DÜZELTME: Sıçrama Önleyici (Buffer) ---
+        let pos = this.getEventPos(e);
+        // Eğer dokunmatik geçmişi varsa ve yeterince veri biriktiyse, son 5. kareyi (güvenli anı) kullan
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
+             pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
+        }
+        // --- DÜZELTME SONU ---
     const centerX = this.state.x + (this.state.width / 2);
     const centerY = this.state.y + 30;
     const relativeX_to_center = pos.x - centerX;
