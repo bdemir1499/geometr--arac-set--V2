@@ -397,7 +397,11 @@ window.GonyeTool.updateMarkings = function() {
 // 8. Madde: Çizim Tutamacı Mantığı
 window.GonyeTool.handleDraw = function(e) {
     
-    const pos = this.getEventPos(e);
+    // --- DÜZELTME: Sıçrama Önleyici (Buffer) ---
+    let pos = this.getEventPos(e);
+    if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
+         pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
+    }
     
     // Farenin pozisyonunu, gönyenin döndürülmüş 'lokal' koordinatına çevir
     const centerX = this.state.x + (this.state.width / 2);
