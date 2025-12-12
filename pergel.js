@@ -318,8 +318,20 @@ toggle: function() {
 
             // 4. ÇİZİM
             case 'drawing':
-                const d_dx = currPos.x - this.state.pivot.x;
-                const d_dy = currPos.y - this.state.pivot.y;
+                // --- 1. EKLENECEK KOD (Sıçrama Önleyici) ---
+                let safePos = currPos;
+                if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
+                     // Son 5-6 kare öncesine bakarak parmak kalkmadan önceki güvenli konumu al
+                     safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
+                }
+                // -------------------------------------------
+
+                // --- 2. DEĞİŞTİRİLEN KISIM ---
+                // (Eskiden 'currPos' yazan yerleri 'safePos' yaptık)
+                const d_dx = safePos.x - this.state.pivot.x;
+                const d_dy = safePos.y - this.state.pivot.y;
+                
+                // --- 3. BURADAN SONRASI SİZDEKİYLE AYNI ---
                 let current_raw_angle = Math.atan2(d_dy, d_dx) * 180 / Math.PI;
                 let previous_angle = this.state.previousDrawAngle; 
                 let accumulated_angle = this.state.rotation; 
