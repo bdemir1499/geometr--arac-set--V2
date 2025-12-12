@@ -1863,11 +1863,11 @@ canvas.addEventListener('touchmove', (e) => {
     if (isDrawing) {
         if (!window.touchHistoryBuffer) window.touchHistoryBuffer = [];
         
-        // Koordinatı listeye ekle
         window.touchHistoryBuffer.push({ x: currentMousePos.x, y: currentMousePos.y });
         
-        // Listeyi son 5 hareketle sınırla (Hafıza şişmesin)
-        if (window.touchHistoryBuffer.length > 5) {
+        // ÖNCEKİ KODDA BURASI 5 İDİ, ŞİMDİ 12 YAPIYORUZ
+        // (Daha geriye gidebilmek için hafızayı arttırdık)
+        if (window.touchHistoryBuffer.length > 12) {
             window.touchHistoryBuffer.shift();
         }
     }
@@ -2169,27 +2169,48 @@ canvas.addEventListener('touchmove', (e) => {
         }
     }
 
-}); // <-- FONKSİYON BURADA SAĞLAM ŞEKİLDE KAPANIYOR
+}); 
+
+
 canvas.addEventListener('touchend', (e) => { 
     if (e && e.cancelable) e.preventDefault();
 
-let finalSafePos = currentMousePos;
+    // =========================================================================
+    // 1. ADIM: AGRESİF SIÇRAMA ENGELLEYİCİ (ZAMAN MAKİNESİ V2)
+    // =========================================================================
+    
+    let finalSafePos = currentMousePos;
+    const buffer = window.touchHistoryBuffer;
 
-    // Eğer geçmiş verisi varsa ve güvenilir sayıdaysa (En az 3)
-    if (window.touchHistoryBuffer && window.touchHistoryBuffer.length >= 3) {
-        // Sondan 2. noktayı al (Son nokta "zıplama" anıdır, çöp)
-        finalSafePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 2];
+    // Eğer elimizde yeterince geçmiş verisi varsa (En az 6 kare)
+    if (buffer && buffer.length >= 6) {
+        // Sondan 5. veya 6. noktayı al!
+        // (Son 5 kare genellikle "kaldırma/titreme" anıdır, hepsini atlıyoruz)
+        finalSafePos = buffer[buffer.length - 6]; 
     } 
-    // Eğer buffer azsa ama yine de varsa en eskisini al
-    else if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
-        finalSafePos = window.touchHistoryBuffer[0];
+    // Eğer buffer azsa (çok kısa çizim) en başa dön
+    else if (buffer && buffer.length > 0) {
+        finalSafePos = buffer[0];
     }
-    
-    // Güvenli noktayı kullan (Bu 'endPos' artık tüm kod boyunca geçerli olacak)
+
+    // ARTIK ENDPOS ÇOK DAHA GÜVENLİ (Zıplamadan önceki an)
     const endPos = snapTarget || finalSafePos;
-    
-    // Listeyi temizle
+
+    // --- ÖNEMLİ EKLEME: SERBEST KALEM ÇİZİMİ İÇİN KUYRUK KESME ---
+    // Eğer kalemle çiziyorsan, ekrana ZATEN çizilmiş olan hatalı son kısmı silmemiz lazım.
+    if (currentTool === 'pen' && drawnStrokes.length > 0) {
+        const lastStroke = drawnStrokes[drawnStrokes.length - 1];
+        // Çizimin son 4-5 noktasını diziden uçur
+        if (lastStroke.path && lastStroke.path.length > 6) {
+             lastStroke.path.splice(-5); // Son 5 noktayı sil
+        }
+    }
+
+    // Buffer'ı temizle
     window.touchHistoryBuffer = [];
+    // =========================================================================
+    
+    // ... (Kodun geri kalanı aynen devam eder: Snapshot, Ruler vb.) ...
 
 
 // --- 3. KOPYALAMA İŞLEMİ (DOKUNMATİK BİTİŞ) ---
