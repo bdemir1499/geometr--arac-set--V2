@@ -399,9 +399,12 @@ window.GonyeTool.handleDraw = function(e) {
     
     // --- DÜZELTME: Sıçrama Önleyici (Buffer) ---
     let pos = this.getEventPos(e);
-    if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
-         pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
-    }
+    if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 6) {
+     // Tabletin hızına göre 6 ile 8 arasında bir değer idealdir. 6'da bırakalım.
+     // Not: Değişken adı dosyaya göre 'pos', 'currPos' veya 'safePos' olabilir.
+     // Sadece aşağıdaki indeks mantığını kontrol edin:
+     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6]; 
+}
     
     // Farenin pozisyonunu, gönyenin döndürülmüş 'lokal' koordinatına çevir
     const centerX = this.state.x + (this.state.width / 2);
