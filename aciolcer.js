@@ -367,7 +367,13 @@ const resize = this.resizeHandle;
     // --- aciolcer.js ---
 // LÜTFEN MEVCUT handleDraw FONKSİYONUNUZU BU BLOK İLE DEĞİŞTİRİN:
 
-    handleDraw: function(currPos) {
+    handleDraw: function(rawPos) {
+        // --- DÜZELTME: Sıçrama Önleyici ---
+        // (Gelen 'rawPos'u 'currPos'a çevirmeden önce buffer kontrolü yapıyoruz)
+        let currPos = rawPos;
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 5) {
+             currPos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6];
+        }
         // Sürükleme başladığını kaydet (Adım 1'deki "hiç çizim yapmama" sorununu çözer)
         this.state.hasDragged = true;
 
