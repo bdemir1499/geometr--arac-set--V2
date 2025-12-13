@@ -371,11 +371,11 @@ const resize = this.resizeHandle;
         // --- DÜZELTME: Sıçrama Önleyici ---
         // (Gelen 'rawPos'u 'currPos'a çevirmeden önce buffer kontrolü yapıyoruz)
         let currPos = rawPos;
-        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 6) {
-     // Tabletin hızına göre 6 ile 8 arasında bir değer idealdir. 6'da bırakalım.
-     // Not: Değişken adı dosyaya göre 'pos', 'currPos' veya 'safePos' olabilir.
-     // Sadece aşağıdaki indeks mantığını kontrol edin:
-     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6]; 
+        // YENİ KOD (Daha eskiye git)
+if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
+     // 12 kare geriye git (Yaklaşık 100-200ms öncesi).
+     // Bu, parmak kalkarken oluşan titremeyi tamamen atlar.
+     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 12];
 }
         // Sürükleme başladığını kaydet (Adım 1'deki "hiç çizim yapmama" sorununu çözer)
         this.state.hasDragged = true;
