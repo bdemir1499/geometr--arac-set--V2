@@ -2,35 +2,76 @@
 
 
 // ============================================================
-//  KESİN ÇÖZÜM V4: DERİN HAFIZA (DEEP BUFFER)
+//  KESİN ÇÖZÜM V5: HİBRİT MOTOR (HIZ LİMİTİ + DERİN HAFIZA)
 // ============================================================
 
 window.touchHistoryBuffer = []; 
+let lastGoodPos = null; // Son geçerli konumu sakla
 
 // 1. DOKUNMA BAŞLADIĞINDA: Sıfırla
 document.addEventListener('touchstart', function(e) {
-    window.touchHistoryBuffer = [];
+    if (e.touches.length > 0) {
+        window.touchHistoryBuffer = [];
+        lastGoodPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        // Başlangıç noktasını güvenli olarak ekle
+        window.touchHistoryBuffer.push(lastGoodPos);
+    }
 }, { capture: true, passive: false });
 
-// 2. DOKUNMA HAREKET EDERKEN: Sürekli Kayıt
+// 2. DOKUNMA HAREKET EDERKEN: Filtrele ve Kaydet
 document.addEventListener('touchmove', function(e) {
-    // Sadece tek parmak
     if (e.touches && e.touches.length === 1) {
-        
-        // Veriyi havuza at
-        window.touchHistoryBuffer.push({
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-        });
+        const currX = e.touches[0].clientX;
+        const currY = e.touches[0].clientY;
 
-        // KAPASİTEYİ ARTIRDIK: Artık 30 kare tutuyoruz (Daha geriye sarabilmek için)
+        // --- GÜVENLİK DUVARI (SPEED TRAP) ---
+        if (lastGoodPos) {
+            const dist = Math.sqrt(Math.pow(currX - lastGoodPos.x, 2) + Math.pow(currY - lastGoodPos.y, 2));
+            
+            // Eğer parmak bir anda 50 pikselden fazla yer değiştirmişse -> BU BİR HATADIR!
+            // Bu veriyi hafızaya ALMA, yok say.
+            if (dist > 50) {
+                return; 
+            }
+        }
+
+        // Veri güvenliyse güncelle ve hafızaya at
+        lastGoodPos = { x: currX, y: currY };
+        window.touchHistoryBuffer.push(lastGoodPos);
+
+        // 30 Karelik Derin Hafıza (Deep Buffer)
         if (window.touchHistoryBuffer.length > 30) {
             window.touchHistoryBuffer.shift();
         }
     }
 }, { capture: true, passive: false });
-// ============================================================ 
 
+// ============================================================
+// --- GELİŞMİŞ FARE ENGELLEYİCİ (MOUSE BLOCKER) ---
+// Dokunmatik cihazlarda fare olaylarını tamamen susturur.
+let lastTouchTime = 0;
+
+// Dokunma olduğunda zamanı kaydet
+document.addEventListener('touchstart', function() { 
+    lastTouchTime = new Date().getTime(); 
+}, { capture: true, passive: false });
+
+// Dokunmadan sonraki 1 saniye boyunca TÜM fare olaylarını öldür
+const blockMouseEvents = function(e) {
+    const now = new Date().getTime();
+    if (now - lastTouchTime < 1000) { // 1 saniye koruma
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+};
+
+// Hem hareketi, hem tıklamayı, hem bırakmayı engelle
+document.addEventListener('mousemove', blockMouseEvents, true);
+document.addEventListener('mousedown', blockMouseEvents, true);
+document.addEventListener('mouseup', blockMouseEvents, true);
+document.addEventListener('click', blockMouseEvents, true);
+// ----------------------------------------------------
 
 //--- KANVAS AYARLARI ---//
 const canvas = document.getElementById('drawing-canvas');
