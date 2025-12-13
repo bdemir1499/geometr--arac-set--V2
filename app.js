@@ -2,77 +2,65 @@
 
 
 // ============================================================
-//  KESİN ÇÖZÜM V5: HİBRİT MOTOR (HIZ LİMİTİ + DERİN HAFIZA)
+//  KESİN ÇÖZÜM V6: AKILLI GHOST ENGELLEYİCİ + DERİN HAFIZA
 // ============================================================
 
 window.touchHistoryBuffer = []; 
-let lastGoodPos = null; // Son geçerli konumu sakla
 
-// 1. DOKUNMA BAŞLADIĞINDA: Sıfırla
+// 1. DOKUNMA BAŞLADIĞINDA: Hafızayı Sıfırla
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
         window.touchHistoryBuffer = [];
-        lastGoodPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        // Başlangıç noktasını güvenli olarak ekle
-        window.touchHistoryBuffer.push(lastGoodPos);
+        // İlk noktayı ekle
+        window.touchHistoryBuffer.push({ 
+            x: e.touches[0].clientX, 
+            y: e.touches[0].clientY 
+        });
     }
 }, { capture: true, passive: false });
 
-// 2. DOKUNMA HAREKET EDERKEN: Filtrele ve Kaydet
+// 2. DOKUNMA HAREKETİ: Sürekli Kayıt (Filtresiz)
 document.addEventListener('touchmove', function(e) {
     if (e.touches && e.touches.length === 1) {
-        const currX = e.touches[0].clientX;
-        const currY = e.touches[0].clientY;
+        // Veriyi doğrudan havuza at (Filtreleme yapma, çizimi bozabilir)
+        window.touchHistoryBuffer.push({
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        });
 
-        // --- GÜVENLİK DUVARI (SPEED TRAP) ---
-        if (lastGoodPos) {
-            const dist = Math.sqrt(Math.pow(currX - lastGoodPos.x, 2) + Math.pow(currY - lastGoodPos.y, 2));
-            
-            // Eğer parmak bir anda 50 pikselden fazla yer değiştirmişse -> BU BİR HATADIR!
-            // Bu veriyi hafızaya ALMA, yok say.
-            if (dist > 50) {
-                return; 
-            }
-        }
-
-        // Veri güvenliyse güncelle ve hafızaya at
-        lastGoodPos = { x: currX, y: currY };
-        window.touchHistoryBuffer.push(lastGoodPos);
-
-        // 30 Karelik Derin Hafıza (Deep Buffer)
+        // 30 Karelik Derin Hafıza
         if (window.touchHistoryBuffer.length > 30) {
             window.touchHistoryBuffer.shift();
         }
     }
 }, { capture: true, passive: false });
 
-// ============================================================
-// --- GELİŞMİŞ FARE ENGELLEYİCİ (MOUSE BLOCKER) ---
-// Dokunmatik cihazlarda fare olaylarını tamamen susturur.
-let lastTouchTime = 0;
+// 3. GELİŞMİŞ FARE ENGELLEYİCİ (ZAMAN AYARLI)
+// Dokunma BİTTİKTEN sonraki 600ms boyunca gelen fare olaylarını engeller.
+// Bu, çizim 10 saniye sürse bile parmağı kaldırdığındaki zıplamayı keser.
 
-// Dokunma olduğunda zamanı kaydet
-document.addEventListener('touchstart', function() { 
-    lastTouchTime = new Date().getTime(); 
-}, { capture: true, passive: false });
+let lastTouchEndTime = 0;
 
-// Dokunmadan sonraki 1 saniye boyunca TÜM fare olaylarını öldür
-const blockMouseEvents = function(e) {
+document.addEventListener('touchend', function() {
+    lastTouchEndTime = new Date().getTime();
+    // Parmağı kaldırdığında buffer'ı temizleme, araçlar son veriyi oradan alacak.
+}, { capture: true });
+
+const blockGhostClicks = function(e) {
     const now = new Date().getTime();
-    if (now - lastTouchTime < 1000) { // 1 saniye koruma
+    // Eğer son dokunma bitişinden bu yana 600ms geçmediyse -> ENGELLE
+    if (now - lastTouchEndTime < 600) {
         e.preventDefault();
         e.stopPropagation();
         return false;
     }
 };
 
-// Hem hareketi, hem tıklamayı, hem bırakmayı engelle
-document.addEventListener('mousemove', blockMouseEvents, true);
-document.addEventListener('mousedown', blockMouseEvents, true);
-document.addEventListener('mouseup', blockMouseEvents, true);
-document.addEventListener('click', blockMouseEvents, true);
-// ----------------------------------------------------
+// Sadece Tıklama ve MouseDown olaylarını engelle (Move'u engelleme, çizimi bozabilir)
+document.addEventListener('mousedown', blockGhostClicks, true);
+document.addEventListener('click', blockGhostClicks, true);
 
+// ============================================================
 //--- KANVAS AYARLARI ---//
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
