@@ -2,54 +2,34 @@
 
 
 // ============================================================
-//  KESİN ÇÖZÜM V3: HIZ SINIRI KORUMALI SIÇRAMA ÖNLEYİCİ
+//  KESİN ÇÖZÜM V4: DERİN HAFIZA (DEEP BUFFER)
 // ============================================================
 
 window.touchHistoryBuffer = []; 
-let lastSafeTouch = null; // Son güvenli konumu hatırla
 
 // 1. DOKUNMA BAŞLADIĞINDA: Sıfırla
 document.addEventListener('touchstart', function(e) {
-    if (e.touches.length > 0) {
-        window.touchHistoryBuffer = [];
-        // İlk dokunuşu güvenli nokta olarak kaydet
-        lastSafeTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
+    window.touchHistoryBuffer = [];
 }, { capture: true, passive: false });
 
-// 2. DOKUNMA HAREKETİ (HIZ TUZAĞI İLE)
+// 2. DOKUNMA HAREKET EDERKEN: Sürekli Kayıt
 document.addEventListener('touchmove', function(e) {
+    // Sadece tek parmak
     if (e.touches && e.touches.length === 1) {
-        const currentX = e.touches[0].clientX;
-        const currentY = e.touches[0].clientY;
         
-        // --- HIZ TUZAĞI (SPEED TRAP) ---
-        if (lastSafeTouch) {
-            // Son konum ile şimdiki konum arasındaki mesafeyi ölç
-            const dist = Math.sqrt(
-                Math.pow(currentX - lastSafeTouch.x, 2) + 
-                Math.pow(currentY - lastSafeTouch.y, 2)
-            );
+        // Veriyi havuza at
+        window.touchHistoryBuffer.push({
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        });
 
-            // EĞER ANİDEN 40 PİKSELDEN FAZLA ZIPLADIYSA -> BU VERİYİ REDDET!
-            if (dist > 40) {
-                return; // Bu bir hatadır, buffer'a ekleme, işlem yapma.
-            }
-        }
-        
-        // Mesafe güvenliyse, bu konumu "son güvenli" olarak güncelle
-        lastSafeTouch = { x: currentX, y: currentY };
-
-        // Buffer'a ekle
-        window.touchHistoryBuffer.push(lastSafeTouch);
-
-        // Hafızayı 12 karede tut
-        if (window.touchHistoryBuffer.length > 12) {
+        // KAPASİTEYİ ARTIRDIK: Artık 30 kare tutuyoruz (Daha geriye sarabilmek için)
+        if (window.touchHistoryBuffer.length > 30) {
             window.touchHistoryBuffer.shift();
         }
     }
 }, { capture: true, passive: false });
- 
+// ============================================================ 
 
 
 //--- KANVAS AYARLARI ---//
