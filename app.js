@@ -2,73 +2,88 @@
 
 
 // ============================================================
-//  KESİN ÇÖZÜM V8: ÖN-DOLU HAFIZA + CANVAS KORUMASI
+//  KESİN ÇÖZÜM V10: "TERSİNE MÜHENDİSLİK" (WHITELIST)
 // ============================================================
 
-// Global Hafıza
 window.touchHistoryBuffer = []; 
+let lastGoodPos = null;
 
-// 1. DOKUNMA BAŞLADIĞINDA: Hafızayı "Önceden" Doldur (Pre-fill)
-// Bu sayede tablet az veri gönderse bile koruma hemen devreye girer.
+// 1. DOKUNMA BAŞLADIĞINDA: Hafızayı Doldur
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
         window.touchHistoryBuffer = [];
         const startPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        lastGoodPos = startPos;
         
-        // Hafızayı başlangıç konumuyla şişir (20 kopya)
-        // Böylece araçlar hemen "güvenli mod"da çalışır.
+        // Araçlar hemen "güvenli" başlasın diye hafızayı doldur
         for(let i=0; i<20; i++) {
             window.touchHistoryBuffer.push(startPos);
         }
     }
 }, { capture: true, passive: false });
 
-// 2. DOKUNMA HAREKETİ: Kayıt (Filtresiz)
+// 2. DOKUNMA HAREKETİ: Hız Limiti ve Kayıt
 document.addEventListener('touchmove', function(e) {
     if (e.touches && e.touches.length === 1) {
-        window.touchHistoryBuffer.push({
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-        });
+        const currX = e.touches[0].clientX;
+        const currY = e.touches[0].clientY;
 
-        // Hafıza çok şişmesin, arkadan sil
+        // --- HIZ TUZAĞI (50px Sınırı) ---
+        if (lastGoodPos) {
+            const dist = Math.sqrt(Math.pow(currX - lastGoodPos.x, 2) + Math.pow(currY - lastGoodPos.y, 2));
+            if (dist > 50) return; // Ani zıplamayı yut, kaydetme.
+        }
+
+        lastGoodPos = { x: currX, y: currY };
+        window.touchHistoryBuffer.push(lastGoodPos);
+
         if (window.touchHistoryBuffer.length > 40) {
             window.touchHistoryBuffer.shift();
         }
     }
 }, { capture: true, passive: false });
 
-// 3. SEÇİCİ FARE ENGELLEYİCİ (SADECE CANVAS İÇİN)
-// Butonları bozmadan sadece çizim alanındaki zıplamayı engeller.
+// 3. AKILLI FARE ENGELLEYİCİ (HER ŞEYİ ENGELLE, BUTONLARI KURTAR)
 let lastTouchEndTime = 0;
 
 document.addEventListener('touchend', function() {
     lastTouchEndTime = new Date().getTime();
 }, { capture: true });
 
-const blockCanvasGhosts = function(e) {
+const blockAllGhostsExceptUI = function(e) {
     const now = new Date().getTime();
-    // Dokunma bittikten sonraki 600ms riskli süredir
+    
+    // Dokunma bittikten sonraki 600ms (Tehlikeli Bölge)
     if (now - lastTouchEndTime < 600) {
-        // HEDEF KONTROLÜ: Tıklanan şey CANVAS mı?
-        // (ID'si drawing-canvas olan veya etiket ismi CANVAS olan)
-        if (e.target.tagName === 'CANVAS' || e.target.id === 'drawing-canvas') {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
+        
+        // --- İZİN LİSTESİ (WHITELIST) ---
+        // Eğer tıklanan yer bir BUTON veya MENÜ ise -> DOKUNMA, BIRAK ÇALIŞSIN.
+        if (e.target.closest('.panel') ||           // Sol/Sağ/Alt Paneller
+            e.target.closest('.tool-options') ||    // Açılır Menüler
+            e.target.closest('button') ||           // Herhangi bir buton
+            e.target.closest('#btn-help') ||        // Yardım butonu
+            e.target.closest('.pdf-close-btn') ||   // PDF Kapatma butonu
+            e.target.tagName === 'INPUT' ||         // Dosya yükleme girişi
+            e.target.tagName === 'LABEL') {         // Etiketler
+            
+            return; // Bunlar güvenli, engelleme.
         }
-        // Eğer hedef buton, panel veya başka bir şeyse KARIŞMA.
+
+        // --- ENGELLEME LİSTESİ ---
+        // Geriye kalan her şey (Canvas, Cetvel, Gönye, Pergel vb.) engellenir.
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+        return false;
     }
 };
 
-// Hem Tıklamayı hem de Mouse hareketlerini (Ghost Move) engelle
-document.addEventListener('mousedown', blockCanvasGhosts, true);
-document.addEventListener('mousemove', blockCanvasGhosts, true); // Zıplamayı yapan gizli hareket bu!
-document.addEventListener('mouseup', blockCanvasGhosts, true);
-document.addEventListener('click', blockCanvasGhosts, true);
+// Zıplamaya neden olan tüm fare olaylarını yakala
+document.addEventListener('mousedown', blockAllGhostsExceptUI, true);
+document.addEventListener('mousemove', blockAllGhostsExceptUI, true);
+document.addEventListener('mouseup', blockAllGhostsExceptUI, true);
+document.addEventListener('click', blockAllGhostsExceptUI, true);
 
 // ============================================================
-
 // ============================================================//--- KANVAS AYARLARI ---//
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
