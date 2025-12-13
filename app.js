@@ -2,23 +2,28 @@
 
 
 // ============================================================
-//  KESİN ÇÖZÜM V7: BUTON DOSTU HİBRİT MOTOR
+//  KESİN ÇÖZÜM V8: ÖN-DOLU HAFIZA + CANVAS KORUMASI
 // ============================================================
 
+// Global Hafıza
 window.touchHistoryBuffer = []; 
 
-// 1. DOKUNMA BAŞLADIĞINDA: Hafızayı Sıfırla
+// 1. DOKUNMA BAŞLADIĞINDA: Hafızayı "Önceden" Doldur (Pre-fill)
+// Bu sayede tablet az veri gönderse bile koruma hemen devreye girer.
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
         window.touchHistoryBuffer = [];
-        window.touchHistoryBuffer.push({ 
-            x: e.touches[0].clientX, 
-            y: e.touches[0].clientY 
-        });
+        const startPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        
+        // Hafızayı başlangıç konumuyla şişir (20 kopya)
+        // Böylece araçlar hemen "güvenli mod"da çalışır.
+        for(let i=0; i<20; i++) {
+            window.touchHistoryBuffer.push(startPos);
+        }
     }
 }, { capture: true, passive: false });
 
-// 2. DOKUNMA HAREKETİ: Sürekli Kayıt
+// 2. DOKUNMA HAREKETİ: Kayıt (Filtresiz)
 document.addEventListener('touchmove', function(e) {
     if (e.touches && e.touches.length === 1) {
         window.touchHistoryBuffer.push({
@@ -26,47 +31,43 @@ document.addEventListener('touchmove', function(e) {
             y: e.touches[0].clientY
         });
 
-        // 30 Karelik Derin Hafıza
-        if (window.touchHistoryBuffer.length > 30) {
+        // Hafıza çok şişmesin, arkadan sil
+        if (window.touchHistoryBuffer.length > 40) {
             window.touchHistoryBuffer.shift();
         }
     }
 }, { capture: true, passive: false });
 
-// 3. AKILLI FARE ENGELLEYİCİ (BUTONLARI BOZMAYAN VERSİYON)
+// 3. SEÇİCİ FARE ENGELLEYİCİ (SADECE CANVAS İÇİN)
+// Butonları bozmadan sadece çizim alanındaki zıplamayı engeller.
 let lastTouchEndTime = 0;
 
 document.addEventListener('touchend', function() {
     lastTouchEndTime = new Date().getTime();
 }, { capture: true });
 
-const blockGhostClicks = function(e) {
+const blockCanvasGhosts = function(e) {
     const now = new Date().getTime();
-    
-    // Eğer son dokunmadan bu yana 600ms geçmediyse (Riskli Zaman)
+    // Dokunma bittikten sonraki 600ms riskli süredir
     if (now - lastTouchEndTime < 600) {
-        
-        // --- İSTİSNA (WHITELIST) ---
-        // Eğer tıklanan şey bir BUTON, INPUT veya PANEL ise ENGELLEME!
-        if (e.target.closest('button') || 
-            e.target.closest('input') || 
-            e.target.closest('a') || 
-            e.target.closest('.panel') || 
-            e.target.closest('.tool-options') ||
-            e.target.closest('#btn-help')) {
-            return; // Bunlar dost unsurlar, geçiş izni ver.
+        // HEDEF KONTROLÜ: Tıklanan şey CANVAS mı?
+        // (ID'si drawing-canvas olan veya etiket ismi CANVAS olan)
+        if (e.target.tagName === 'CANVAS' || e.target.id === 'drawing-canvas') {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
         }
-
-        // Ama eğer Canvas'a veya boşluğa tıklanıyorsa (Zıplama Riski) -> ENGELLE
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
+        // Eğer hedef buton, panel veya başka bir şeyse KARIŞMA.
     }
 };
 
-// Sadece Tıklama ve MouseDown olaylarını denetle
-document.addEventListener('mousedown', blockGhostClicks, true);
-document.addEventListener('click', blockGhostClicks, true);
+// Hem Tıklamayı hem de Mouse hareketlerini (Ghost Move) engelle
+document.addEventListener('mousedown', blockCanvasGhosts, true);
+document.addEventListener('mousemove', blockCanvasGhosts, true); // Zıplamayı yapan gizli hareket bu!
+document.addEventListener('mouseup', blockCanvasGhosts, true);
+document.addEventListener('click', blockCanvasGhosts, true);
+
+// ============================================================
 
 // ============================================================//--- KANVAS AYARLARI ---//
 const canvas = document.getElementById('drawing-canvas');
