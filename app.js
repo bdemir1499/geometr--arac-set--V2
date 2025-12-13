@@ -1859,18 +1859,7 @@ canvas.addEventListener('touchmove', (e) => {
     currentMousePos = pos; 
     const endPos = snapTarget || currentMousePos;
 
-    // --- Time Machine: Sıçrama Engelleyici Tampon (SÜREKLİ KAYIT) ---
-    // (Artık isDrawing kontrolü yok, her zaman kayıt alıyor)
-    if (!window.touchHistoryBuffer) window.touchHistoryBuffer = [];
     
-    window.touchHistoryBuffer.push({ x: currentMousePos.x, y: currentMousePos.y });
-    
-    // Hafızayı 5'ten 12'ye çıkardık (Daha geriye sarabilmek için)
-    if (window.touchHistoryBuffer.length > 12) {
-        window.touchHistoryBuffer.shift();
-    }
-    // -----------------------------------------------------------
-
     // 2. PINCH ZOOM (İKİ PARMAK)
     if (isPinching) {
         const p1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -2205,6 +2194,29 @@ canvas.addEventListener('touchend', (e) => {
 
     // Buffer'ı temizle
     window.touchHistoryBuffer = [];
+
+// 1. Hafızayı her dokunuşta sıfırla (Önemli)
+document.addEventListener('touchstart', function() {
+    window.touchHistoryBuffer = [];
+}, { capture: true }); // 'capture: true' bunu en önce çalıştırır
+
+// 2. Hareketi ARAÇLARDAN ÖNCE kaydet (En Kritik Kısım)
+document.addEventListener('touchmove', function(e) {
+    if (e.touches && e.touches.length > 0) {
+        if (!window.touchHistoryBuffer) window.touchHistoryBuffer = [];
+        
+        // Konumu kaydet
+        window.touchHistoryBuffer.push({
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        });
+
+        // Hafızayı 12 karede tut
+        if (window.touchHistoryBuffer.length > 12) {
+            window.touchHistoryBuffer.shift();
+        }
+    }
+}, { capture: true, passive: false });
     // =========================================================================
     
     // ... (Kodun geri kalanı aynen devam eder: Snapshot, Ruler vb.) ...
