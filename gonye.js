@@ -399,11 +399,12 @@ window.GonyeTool.handleDraw = function(e) {
     
     // --- DÜZELTME: Sıçrama Önleyici (Buffer) ---
     let pos = this.getEventPos(e);
-    if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 6) {
-     // Tabletin hızına göre 6 ile 8 arasında bir değer idealdir. 6'da bırakalım.
-     // Not: Değişken adı dosyaya göre 'pos', 'currPos' veya 'safePos' olabilir.
-     // Sadece aşağıdaki indeks mantığını kontrol edin:
-     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 6]; 
+
+    // YENİ KOD (Daha eskiye git)
+if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
+     // 12 kare geriye git (Yaklaşık 100-200ms öncesi).
+     // Bu, parmak kalkarken oluşan titremeyi tamamen atlar.
+     pos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 12];
 }
     
     // Farenin pozisyonunu, gönyenin döndürülmüş 'lokal' koordinatına çevir
