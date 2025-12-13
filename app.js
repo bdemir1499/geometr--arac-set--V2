@@ -1,36 +1,58 @@
-// --- app.js EN ÜST SATIRINA ---
-// Hareket geçmişini tutacak liste (Sıçrama önleyici tampon)
-window.touchHistoryBuffer = [];
-// ------------------------------+
 
-// --- app.js EN ÜST SATIRINA YAPIŞTIR ---
-// Tablet Sıçrama Önleyici: Son güvenli konumu sakla
-window.lastSafeDrawPos = { x: 0, y: 0 };
 
+
+// ============================================================
+//  KESİN ÇÖZÜM V3: HIZ SINIRI KORUMALI SIÇRAMA ÖNLEYİCİ
+// ============================================================
+
+window.touchHistoryBuffer = []; 
+let lastSafeTouch = null; // Son güvenli konumu hatırla
+
+// 1. DOKUNMA BAŞLADIĞINDA: Sıfırla
+document.addEventListener('touchstart', function(e) {
+    if (e.touches.length > 0) {
+        window.touchHistoryBuffer = [];
+        // İlk dokunuşu güvenli nokta olarak kaydet
+        lastSafeTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+}, { capture: true, passive: false });
+
+// 2. DOKUNMA HAREKETİ (HIZ TUZAĞI İLE)
 document.addEventListener('touchmove', function(e) {
-    // Sadece tek parmakla çizim yaparken kayıt al
-    if (e.touches.length === 1) {
-        window.lastSafeDrawPos = {
+    if (e.touches && e.touches.length === 1) {
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        
+        // --- HIZ TUZAĞI (SPEED TRAP) ---
+        if (lastSafeTouch) {
+            // Son konum ile şimdiki konum arasındaki mesafeyi ölç
+            const dist = Math.sqrt(
+                Math.pow(currentX - lastSafeTouch.x, 2) + 
+                Math.pow(currentY - lastSafeTouch.y, 2)
+            );
 
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-        };
+            // EĞER ANİDEN 40 PİKSELDEN FAZLA ZIPLADIYSA -> BU VERİYİ REDDET!
+            if (dist > 40) {
+                return; // Bu bir hatadır, buffer'a ekleme, işlem yapma.
+            }
+        }
+        
+        // Mesafe güvenliyse, bu konumu "son güvenli" olarak güncelle
+        lastSafeTouch = { x: currentX, y: currentY };
+
+        // Buffer'a ekle
+        window.touchHistoryBuffer.push(lastSafeTouch);
+
+        // Hafızayı 12 karede tut
+        if (window.touchHistoryBuffer.length > 12) {
+            window.touchHistoryBuffer.shift();
+        }
     }
-}, { passive: false });
-// ---------------------------------------
-// Android/iOS sıçrama önleyici (Ghost Click Blocker)
-let lastTouchTime = 0;
-document.addEventListener('touchstart', function() { lastTouchTime = new Date().getTime(); }, {passive: false});
-document.addEventListener('mousedown', function(e) {
-    const now = new Date().getTime();
-    // Eğer son 600ms içinde dokunmatik işlem yapıldıysa, gelen Mouse olayını iptal et
-    if (now - lastTouchTime < 600) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-    }
-}, true); // 'true' burası için önemlidir (Capture phase)
-// --- KANVAS AYARLARI ---
+}, { capture: true, passive: false });
+ 
+
+
+--- KANVAS AYARLARI ---
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
 // --- RESİM YÜKLEME DEĞİŞKENLERİ ---
