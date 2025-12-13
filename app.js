@@ -2,7 +2,7 @@
 
 
 // ============================================================
-//  KESİN ÇÖZÜM V6: AKILLI GHOST ENGELLEYİCİ + DERİN HAFIZA
+//  KESİN ÇÖZÜM V7: BUTON DOSTU HİBRİT MOTOR
 // ============================================================
 
 window.touchHistoryBuffer = []; 
@@ -11,7 +11,6 @@ window.touchHistoryBuffer = [];
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
         window.touchHistoryBuffer = [];
-        // İlk noktayı ekle
         window.touchHistoryBuffer.push({ 
             x: e.touches[0].clientX, 
             y: e.touches[0].clientY 
@@ -19,10 +18,9 @@ document.addEventListener('touchstart', function(e) {
     }
 }, { capture: true, passive: false });
 
-// 2. DOKUNMA HAREKETİ: Sürekli Kayıt (Filtresiz)
+// 2. DOKUNMA HAREKETİ: Sürekli Kayıt
 document.addEventListener('touchmove', function(e) {
     if (e.touches && e.touches.length === 1) {
-        // Veriyi doğrudan havuza at (Filtreleme yapma, çizimi bozabilir)
         window.touchHistoryBuffer.push({
             x: e.touches[0].clientX,
             y: e.touches[0].clientY
@@ -35,33 +33,42 @@ document.addEventListener('touchmove', function(e) {
     }
 }, { capture: true, passive: false });
 
-// 3. GELİŞMİŞ FARE ENGELLEYİCİ (ZAMAN AYARLI)
-// Dokunma BİTTİKTEN sonraki 600ms boyunca gelen fare olaylarını engeller.
-// Bu, çizim 10 saniye sürse bile parmağı kaldırdığındaki zıplamayı keser.
-
+// 3. AKILLI FARE ENGELLEYİCİ (BUTONLARI BOZMAYAN VERSİYON)
 let lastTouchEndTime = 0;
 
 document.addEventListener('touchend', function() {
     lastTouchEndTime = new Date().getTime();
-    // Parmağı kaldırdığında buffer'ı temizleme, araçlar son veriyi oradan alacak.
 }, { capture: true });
 
 const blockGhostClicks = function(e) {
     const now = new Date().getTime();
-    // Eğer son dokunma bitişinden bu yana 600ms geçmediyse -> ENGELLE
+    
+    // Eğer son dokunmadan bu yana 600ms geçmediyse (Riskli Zaman)
     if (now - lastTouchEndTime < 600) {
+        
+        // --- İSTİSNA (WHITELIST) ---
+        // Eğer tıklanan şey bir BUTON, INPUT veya PANEL ise ENGELLEME!
+        if (e.target.closest('button') || 
+            e.target.closest('input') || 
+            e.target.closest('a') || 
+            e.target.closest('.panel') || 
+            e.target.closest('.tool-options') ||
+            e.target.closest('#btn-help')) {
+            return; // Bunlar dost unsurlar, geçiş izni ver.
+        }
+
+        // Ama eğer Canvas'a veya boşluğa tıklanıyorsa (Zıplama Riski) -> ENGELLE
         e.preventDefault();
         e.stopPropagation();
         return false;
     }
 };
 
-// Sadece Tıklama ve MouseDown olaylarını engelle (Move'u engelleme, çizimi bozabilir)
+// Sadece Tıklama ve MouseDown olaylarını denetle
 document.addEventListener('mousedown', blockGhostClicks, true);
 document.addEventListener('click', blockGhostClicks, true);
 
-// ============================================================
-//--- KANVAS AYARLARI ---//
+// ============================================================//--- KANVAS AYARLARI ---//
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
 // --- RESİM YÜKLEME DEĞİŞKENLERİ ---
