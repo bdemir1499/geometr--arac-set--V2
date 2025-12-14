@@ -250,7 +250,20 @@ function resizeCanvas() {
 
 function getEventPosition(e) {
     // DÜZELTME: Parmak kalkarken (touchend) yeni hesap yapma, son konumu kullan (Zıplamayı Önler)
-    if (e.type === 'touchend' || e.type === 'touchcancel') return currentMousePos;
+    if (e.type === 'touchend' || e.type === 'touchcancel') {
+    const ua = navigator.userAgent || "";
+    const isMobile = /Android|iPhone|iPad|iPod|HarmonyOS/i.test(ua);
+    if (isMobile && window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+        const safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (safePos.x - rect.left) * (canvas.width / rect.width),
+            y: (safePos.y - rect.top) * (canvas.height / rect.height)
+        };
+    }
+    return currentMousePos;
+}
+
 
     const rect = canvas.getBoundingClientRect();
     
@@ -2975,7 +2988,7 @@ function resizeCanvas() {
 }
 
 // Hem yüklenince, hem ekran dönünce, hem de adres çubuğu oynayınca çalıştır
-window.addEventListener('load', resizeCanvas);
+window.addEventListener('load', resizeCanv as);
 window.addEventListener('resize', resizeCanvas);
 // DÜZELTME: Fiziksel araçların (Cetvel vb.) butonlarından parmak çekince oluşan zıplamayı engelle
 document.addEventListener('touchend', (e) => {
