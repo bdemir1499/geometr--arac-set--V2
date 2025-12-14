@@ -447,64 +447,55 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
 // '};' İŞARETİNİ BU BLOK İLE DEĞİŞTİRİN:
 
     finalizeDraw: function() {
-        
-        // --- DÜZELTME (0 Derece Hatası) ---
-        if (!this.state.isDrawing) return;
+    // --- DÜZELTME (0 Derece Hatası) ---
+    if (!this.state.isDrawing) return;
 
-        // "Sadece tıklayıp bıraktıysan" (hiç sürüklemediysen) çizim yapma.
-        // Ama 0 dereceye sürüklediysen (hasDragged) çizim yap.
-        if (this.state.currentDrawAngleLocal < 0.1 && !this.state.hasDragged) {
-            return;
-        }
-
-     // --- DÜZELTME SONU ---
-
-        const cx = this.state.x;
-        const cy = this.state.y;
-
-        // Lokal açıdan Global açıya geç
-        const localAngleDeg = this.state.currentDrawAngleLocal || (window.touchHistoryBuffer.at(-1) ? Math.atan2(
-    window.touchHistoryBuffer.at(-1).y - this.state.y,
-    window.touchHistoryBuffer.at(-1).x - this.state.x
-) * 180 / Math.PI : 0);
-
-        // (Lokal Y-yukarı açısını, Global Y-aşağı sistemine çevir ve aletin dönüşünü ekle)
-        // Global = (360 - Lokal) + AletDönüşü
-        const globalAngleRad = ((360 - localAngleDeg) + this.state.angle) * Math.PI / 180;
-
-        // Ana kanvas ofsetini bul
-        const mainCanvas = document.querySelector('canvas');
-        const rect = mainCanvas.getBoundingClientRect();
-
-        // P1 (Merkez) ve P2 (Işın ucu) hesapla
-        const p1 = {
-            x: cx - rect.left,
-            y: cy - rect.top
-        };
-        const p2 = {
-            x: p1.x + Math.cos(globalAngleRad) * 1000,
-            y: p1.y + Math.sin(globalAngleRad) * 1000
-        };
-
-        // Kaydet
-        if (window.drawnStrokes && window.redrawAllStrokes) {
-            let l1 = '', l2 = '';
-            if (window.nextPointChar && window.advanceChar) {
-                l1 = window.nextPointChar; window.nextPointChar = window.advanceChar(l1);
-                l2 = window.nextPointChar; window.nextPointChar = window.advanceChar(l2);
-            }
-            window.drawnStrokes.push({
-                type: 'ray',
-                p1: p1,
-                p2: p2,
-                color: window.isToolThemeBlack ? '#000000' : window.currentLineColor,
-                width: 3,
-                label1: l1, label2: l2
-            });
-            window.redrawAllStrokes();
-            window.touchHistoryBuffer = [];
-        }
+    // "Sadece tıklayıp bıraktıysan" (hiç sürüklemediysen) çizim yapma.
+    if (this.state.currentDrawAngleLocal < 0.1 && !this.state.hasDragged) {
+        return;
     }
+    // --- DÜZELTME SONU ---
+
+    const cx = this.state.x;
+    const cy = this.state.y;
+
+    // Lokal açıdan Global açıya geç
+    const last = window.touchHistoryBuffer.at(-1);
+    const localAngleDeg = this.state.currentDrawAngleLocal || (last ? Math.atan2(
+        last.y - this.state.y,
+        last.x - this.state.x
+    ) * 180 / Math.PI : 0);
+
+    // Global açıya çevir
+    const globalAngleRad = ((360 - localAngleDeg) + this.state.angle) * Math.PI / 180;
+
+    // P1 (Merkez) ve P2 (Işın ucu) hesapla — artık rect çıkarma yok!
+    const p1 = { x: cx, y: cy };
+    const p2 = {
+        x: p1.x + Math.cos(globalAngleRad) * 1000,
+        y: p1.y + Math.sin(globalAngleRad) * 1000
+    };
+
+    // Kaydet
+    if (window.drawnStrokes && window.redrawAllStrokes) {
+        let l1 = '', l2 = '';
+        if (window.nextPointChar && window.advanceChar) {
+            l1 = window.nextPointChar; window.nextPointChar = window.advanceChar(l1);
+            l2 = window.nextPointChar; window.nextPointChar = window.advanceChar(l2);
+        }
+        window.drawnStrokes.push({
+            type: 'ray',
+            p1: p1,
+            p2: p2,
+            color: window.isToolThemeBlack ? '#000000' : window.currentLineColor,
+            width: 3,
+            label1: l1, label2: l2
+        });
+        window.redrawAllStrokes();
+        window.touchHistoryBuffer = [];
+    }
+}
+
 }; // <-- Bu, window.AciolcerTool nesnesini kapatır
 
 window.AciolcerTool.init();
