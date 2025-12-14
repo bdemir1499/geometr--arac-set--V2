@@ -246,24 +246,18 @@ function resizeCanvas() {
 // --- app.js ---
 
 function getEventPosition(e) {
-    // DÜZELTME: Parmak kalkarken (touchend) yeni hesap yapma, son konumu kullan (Zıplamayı Önler)
+    // Parmak kalkarken (touchend) yeni hesap yapma, son konumu kullan
     if (e.type === 'touchend' || e.type === 'touchcancel') {
-    const ua = navigator.userAgent || "";
-    const isMobile = /Android|iPhone|iPad|iPod|HarmonyOS/i.test(ua);
-    if (isMobile && window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
-        const safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
-        const rect = canvas.getBoundingClientRect();
-        return {
-            x: (safePos.x - rect.left) * (canvas.width / rect.width),
-            y: (safePos.y - rect.top) * (canvas.height / rect.height)
-        };
+        const ua = navigator.userAgent || "";
+        const isMobile = /Android|iPhone|iPad|iPod|HarmonyOS/i.test(ua);
+        if (isMobile && window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+            // Buffer artık canvas koordinatı tutuyor → direkt döndür
+            return window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
+        }
+        return currentMousePos; // zaten canvas koordinatı
     }
-    return currentMousePos;
-}
-
 
     const rect = canvas.getBoundingClientRect();
-    
     let clientX, clientY;
 
     // Dokunmatik ve Mouse ayrımı
@@ -278,14 +272,12 @@ function getEventPosition(e) {
         clientY = e.clientY;
     }
 
-    // 2. HASSAS HESAPLAMA (ÖLÇEK DÜZELTMELİ)
-    // (Tıklanan Yer - Canvas Başlangıcı) * (İç Çözünürlük / Görsel Boyut)
+    // Canvas koordinatına ölçekleme
     return { 
         x: (clientX - rect.left) * (canvas.width / rect.width),
         y: (clientY - rect.top) * (canvas.height / rect.height)
     };
-}
-function drawDot(pos, color = '#00FFCC') {
+}function drawDot(pos, color = '#00FFCC') {
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, 5, 0, 2 * Math.PI); 
     ctx.fillStyle = color;
