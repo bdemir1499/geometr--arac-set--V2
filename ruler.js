@@ -471,7 +471,8 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
 
 finalizeDraw: function() {
     
-    const handleX = this.state.currentHandleX || (window.touchHistoryBuffer.at(-1)?.x || 0);
+    const handleX = this.state.currentHandleX || (window.touchHistoryBuffer.at(-1)?.x ?? 0);
+
  
     if (handleX <= 0) return; 
 
