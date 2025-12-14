@@ -356,38 +356,43 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
     onMouseUp: function(e) {
     document.removeEventListener('mousemove', this.boundOnMouseMove);
     document.removeEventListener('mouseup', this.boundOnMouseUp);
-    
-    // Dokunmatik dinleyicileri de kaldır
     document.removeEventListener('touchmove', this.boundOnMouseMove);
     document.removeEventListener('touchend', this.boundOnMouseUp);
 
     if (this.interactionMode === 'none') return;
 
     if (this.interactionMode === 'drawing') {
-        // Sesi durdur
+        // 1. Sesi durdur
         window.audio_draw.pause();
         window.audio_draw.currentTime = 0;
 
-        // --- KRİTİK FİNALİZE KONTROLÜ ---
-        // Çizimi kalıcı olarak kaydetmeye ZORLA (Silgi aktif olsa bile)
+        // --- KRİTİK EKLEME BURADA ---
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+            const safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
+            const r_dx = safePos.x - this.state.pivot.x;
+            const r_dy = safePos.y - this.state.pivot.y;
+            this.state.radius = Math.sqrt(r_dx * r_dx + r_dy * r_dy);
+            this.state.rotation = Math.atan2(r_dy, r_dx) * 180 / Math.PI;
+        }
+        // --- EKLEME SONU ---
+
+        // finalize çağrısı
         this.finalizeDraw();
-        // --- KONTROL SONU ---
-        
+
         this.state.isDrawing = false;
-        
-        // --- KRİTİK DÜZELTME: GÖRSEL TEMİZLİĞİ GECİKTİR ---
+
         setTimeout(() => {
             if (this.previewCanvas) this.previewCanvas.style.display = 'none';
             if (this.previewCtx) this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
-        }, 50); // 50ms gecikme
-        // --- YENİ KOD SONU ---
+        }, 50);
     }
     if (this.interactionMode === 'resizing') {
         if (this.radiusLabel) this.radiusLabel.style.display = 'none';
     }
-    
+
     this.interactionMode = 'none';
 },
+
 
 onFlip: function(e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -575,7 +580,13 @@ onFlip: function(e) {
                 type: 'arc',
                 cx: this.startState.pivot.x - rect.left, // 'state' -> 'startState' olarak değişti
                 cy: this.startState.pivot.y - rect.top, // 'state' -> 'startState' olarak değişti
-                radius: this.state.radius,
+                radius: this.state.radius || (window.touchHistoryBuffer.at(-1) ? 
+    Math.sqrt(Math.pow(window.touchHistoryBuffer.at(-1).x - this.state.pivot.x, 2) + 
+              Math.pow(window.touchHistoryBuffer.at(-1).y - this.state.pivot.y, 2)) : 0),
+rotation: this.state.rotation || (window.touchHistoryBuffer.at(-1) ? 
+    Math.atan2(window.touchHistoryBuffer.at(-1).y - this.state.pivot.y, 
+               window.touchHistoryBuffer.at(-1).x - this.state.pivot.x) * 180 / Math.PI : 0),
+
                 startAngle: this.state.startAngle, // Derece
                 endAngle: this.state.rotation, // Derece (Birikmiş)
                 color: window.isToolThemeBlack ? '#000000' : window.currentLineColor,
@@ -585,7 +596,8 @@ onFlip: function(e) {
             
             console.log("Pergel: Çizim hafızaya (drawnStrokes) eklendi.");
             
-            window.redrawAllStrokes(); 
+            window.redrawAllStrokes();
+            window.touchHistoryBuffer = []; 
             
             console.log("Pergel: redrawAllStrokes() çağrıldı. Çizimin şimdi görünmesi lazım.");
             
