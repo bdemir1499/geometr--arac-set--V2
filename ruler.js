@@ -295,23 +295,24 @@ window.audio_draw.play();
         window.audio_draw.pause(); 
         window.audio_draw.currentTime = 0; 
         
-        // --- KRİTİK FİNALİZE KONTROLÜ ---
-        // Çizimi kalıcı olarak kaydetmeye zorla (Silgi aktif olsa bile)
-        this.finalizeDraw(); 
-        // --- KONTROL SONU ---
+        // --- KRİTİK EKLEME BURADA ---
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+            const safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
+            this.state.currentHandleX = safePos.x; // cetvel için
+        }
+        // --- EKLEME SONU ---
         
-        // 2. Çizimi kaydet (Hata düzeltildi: finalizeDraw ÖNCE çağrılır)
+        // finalize çağrısı
+        this.finalizeDraw(); 
+        
         this.drawHandleLabel.style.display = 'none';
         
-        // 3. Handle'ı sıfırla (Görsel ve State)
         if(this.drawHandleElement) { 
             this.drawHandleElement.style.transition = 'left 0.05s ease-out';
             this.drawHandleElement.style.left = '0px'; 
             
             this.isDrawingLine = false; 
             this.drawCtx.clearRect(0, 0, this.drawCanvas.width, this.drawCanvas.height);
-            
-            // KRİTİK: Bir sonraki çizim için state'i sıfırla
             this.state.currentHandleX = 0; 
         }
     }
@@ -470,7 +471,8 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
 
 finalizeDraw: function() {
     
-    const handleX = this.state.currentHandleX || 0; 
+    const handleX = this.state.currentHandleX || (window.touchHistoryBuffer.at(-1)?.x || 0);
+ 
     if (handleX <= 0) return; 
 
     // ... (p1 ve p2 hesaplamaları sizde mevcut olmalı) ...
@@ -526,7 +528,8 @@ finalizeDraw: function() {
             lengthLabel: cmText, // <-- YENİ SATIR
             lengthLabelPos: midPoint // <-- YENİ SATIR
         });
-        window.redrawAllStrokes(); 
+        window.redrawAllStrokes();
+        window.touchHistoryBuffer = []; 
     } else {
         console.error("Hata: drawnStrokes veya redrawAllStrokes globalda bulunamadı!");
     }
