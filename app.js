@@ -25,17 +25,14 @@ document.addEventListener('touchstart', function(e) {
 // 2. DOKUNMA HAREKETİ: Hız Limiti ve Kayıt
 document.addEventListener('touchmove', function(e) {
     if (e.touches && e.touches.length === 1) {
-        const currX = e.touches[0].clientX;
-        const currY = e.touches[0].clientY;
+        const rect = canvas.getBoundingClientRect();
+const clientX = e.touches[0].clientX;
+const clientY = e.touches[0].clientY;
+const x = (clientX - rect.left) * (canvas.width / rect.width);
+const y = (clientY - rect.top) * (canvas.height / rect.height);
 
-        // --- HIZ TUZAĞI (50px Sınırı) ---
-        if (lastGoodPos) {
-            const dist = Math.sqrt(Math.pow(currX - lastGoodPos.x, 2) + Math.pow(currY - lastGoodPos.y, 2));
-            if (dist > 50) return; // Ani zıplamayı yut, kaydetme.
-        }
-
-        lastGoodPos = { x: currX, y: currY };
-        window.touchHistoryBuffer.push(lastGoodPos);
+lastGoodPos = { x, y };
+window.touchHistoryBuffer.push(lastGoodPos);
 
         if (window.touchHistoryBuffer.length > 40) {
             window.touchHistoryBuffer.shift();
