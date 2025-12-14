@@ -2988,7 +2988,7 @@ function resizeCanvas() {
 }
 
 // Hem yüklenince, hem ekran dönünce, hem de adres çubuğu oynayınca çalıştır
-window.addEventListener('load', resizeCanv as);
+window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
 // DÜZELTME: Fiziksel araçların (Cetvel vb.) butonlarından parmak çekince oluşan zıplamayı engelle
 document.addEventListener('touchend', (e) => {
