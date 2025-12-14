@@ -551,65 +551,46 @@ onFlip: function(e) {
     
     // Çizimi bitir (Ana kanvasa gönder)
     finalizeDraw: function() {
-        if (!this.state.isDrawing) return;
+    if (!this.state.isDrawing) return;
 
-        // --- HATA AYIKLAMA BAŞLANGIÇ ---
-        console.log("Pergel: finalizeDraw() çağrıldı. (Çizim bitti, kaydetmeye çalışıyor...)");
+    console.log("Pergel: finalizeDraw() çağrıldı. (Çizim bitti, kaydetmeye çalışıyor...)");
 
-        
-        const mainCanvas = document.querySelector('canvas');
-        if (!mainCanvas) {
-             console.error("Pergel HATASI: Ana <canvas> bulunamadı!");
-             return; 
-        }
-        
-        const rect = mainCanvas.getBoundingClientRect();
+    if (window.drawnStrokes && window.redrawAllStrokes) {
+        console.log("Pergel BAŞARILI: app.js motoru bulundu (drawnStrokes ve redrawAllStrokes OK).");
 
-        // ANA KONTROL: app.js (motor) bulunabiliyor mu?
-        if (window.drawnStrokes && window.redrawAllStrokes) {
-            
-            console.log("Pergel BAŞARILI: app.js motoru bulundu (drawnStrokes ve redrawAllStrokes OK).");
+        // Merkez noktası için bir etiket al
+        const centerLabel = window.nextPointChar;
+        window.nextPointChar = window.advanceChar(centerLabel);
 
-            // --- YENİ KOD BAŞLANGICI ---
-            // Merkez noktası için bir etiket al
-            const centerLabel = window.nextPointChar;
-            window.nextPointChar = window.advanceChar(centerLabel);
-            // --- YENİ KOD SONU ---
+        const last = window.touchHistoryBuffer.at(-1);
 
-            window.drawnStrokes.push({
-                type: 'arc',
-                cx: this.startState.pivot.x - rect.left, // 'state' -> 'startState' olarak değişti
-                cy: this.startState.pivot.y - rect.top, // 'state' -> 'startState' olarak değişti
-                radius: this.state.radius || (window.touchHistoryBuffer.at(-1) ? 
-    Math.sqrt(Math.pow(window.touchHistoryBuffer.at(-1).x - this.state.pivot.x, 2) + 
-              Math.pow(window.touchHistoryBuffer.at(-1).y - this.state.pivot.y, 2)) : 0),
-rotation: this.state.rotation || (window.touchHistoryBuffer.at(-1) ? 
-    Math.atan2(window.touchHistoryBuffer.at(-1).y - this.state.pivot.y, 
-               window.touchHistoryBuffer.at(-1).x - this.state.pivot.x) * 180 / Math.PI : 0),
+        window.drawnStrokes.push({
+            type: 'arc',
+            cx: this.state.pivot.x,   // artık rect çıkarma yok
+            cy: this.state.pivot.y,   // artık rect çıkarma yok
+            radius: this.state.radius || (last ? distance(this.state.pivot, last) : 0),
+            rotation: this.state.rotation || (last ? Math.atan2(
+                last.y - this.state.pivot.y,
+                last.x - this.state.pivot.x
+            ) * 180 / Math.PI : 0),
+            startAngle: this.state.startAngle, // Derece
+            endAngle: this.state.rotation,     // Derece (Birikmiş)
+            color: window.isToolThemeBlack ? '#000000' : window.currentLineColor,
+            width: 3,
+            label: centerLabel
+        });
 
-                startAngle: this.state.startAngle, // Derece
-                endAngle: this.state.rotation, // Derece (Birikmiş)
-                color: window.isToolThemeBlack ? '#000000' : window.currentLineColor,
-                width: 3,
-                label: centerLabel // <- YENİ EKLENEN SATIR
-            });
-            
-            console.log("Pergel: Çizim hafızaya (drawnStrokes) eklendi.");
-            
-            window.redrawAllStrokes();
-            window.touchHistoryBuffer = []; 
-            
-            console.log("Pergel: redrawAllStrokes() çağrıldı. Çizimin şimdi görünmesi lazım.");
-            
-        } else {
-            // SORUN %99 BURADA
-            console.error("Pergel KRİTİK HATA: app.js motoru bulunamadı!");
-            console.log("window.drawnStrokes şu anda:", window.drawnStrokes);
-            console.log("window.redrawAllStrokes şu anda:", window.redrawAllStrokes);
-            console.error("Lütfen app.js dosyasının HTML'de pergel.js'den ÖNCE yüklendiğinden emin olun!");
-        }
-        // --- HATA AYIKLAMA SONU ---
+        console.log("Pergel: Çizim hafızaya (drawnStrokes) eklendi.");
+
+        window.redrawAllStrokes();
+        window.touchHistoryBuffer = [];
+
+        console.log("Pergel: redrawAllStrokes() çağrıldı. Çizimin şimdi görünmesi lazım.");
+    } else {
+        console.error("Pergel KRİTİK HATA: app.js motoru bulunamadı!");
     }
+}
+
 };
 
 // Aracı hemen başlat
