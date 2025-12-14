@@ -457,7 +457,8 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
 // 8. Madde: Çizimi ana kanvasa (app.js) gönderme
 window.GonyeTool.finalizeDraw = function() {
 
-        const handleY = this.state.currentHandleY || (window.touchHistoryBuffer.at(-1)?.y || 0);
+        const handleY = this.state.currentHandleY || (window.touchHistoryBuffer.at(-1)?.y ?? 0);
+
  
         
         const startX_local = 4; 
