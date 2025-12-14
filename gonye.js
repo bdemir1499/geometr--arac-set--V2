@@ -288,29 +288,32 @@ window.GonyeTool.onMouseUp = function(e) {
         window.audio_draw.pause();
         window.audio_draw.currentTime = 0;
         
-        // --- KRİTİK FİNALİZE KONTROLÜ ---
-        // Çizimi kalıcı olarak kaydetmeye zorla (Silgi aktif olsa bile)
+        // --- KRİTİK EKLEME BURADA ---
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+            const safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
+            this.state.currentHandleY = safePos.y; // gönye için
+        }
+        // --- EKLEME SONU ---
+        
+        // finalize çağrısı
         this.finalizeDraw();
-        // --- KONTROL SONU ---
-
+        
         // 2. Etiketi gizle 
         this.drawHandleLabel.style.display = 'none';
         
-        // --- KRİTİK DÜZELTME (Handle'ı Geri Çek) ---
-        // Çizim kaydından hemen sonra, temiz ve tek bir blokta geri dönüş yapılır.
+        // Handle'ı geri çek
         if(this.drawHandleElement) { 
             this.drawHandleElement.style.transition = 'top 0.05s ease-out';
-            this.drawHandleElement.style.top = `${this.state.height - 20}px`; // Handle'ı 0'a çek
+            this.drawHandleElement.style.top = `${this.state.height - 20}px`;
             
-            // Bayrakları ve önizlemeyi temizle
             this.isDrawingLine = false;
             this.drawCtx.clearRect(0, 0, this.drawCanvas.width, this.drawCanvas.height);
         }
-        // --- DÜZELTME SONU ---
     }
     
     this.interactionMode = 'none';
 };
+
 // --- gonye.js (BÖLÜM 3/3) ---
 // (Karmaşık Etkileşim Mantığı - Drag, Rotate, Draw)
 
@@ -454,7 +457,8 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
 // 8. Madde: Çizimi ana kanvasa (app.js) gönderme
 window.GonyeTool.finalizeDraw = function() {
 
-        const handleY = this.state.currentHandleY || 0; 
+        const handleY = this.state.currentHandleY || (window.touchHistoryBuffer.at(-1)?.y || 0);
+ 
         
         const startX_local = 4; 
         const startY_local = this.state.height; 
@@ -514,7 +518,8 @@ window.GonyeTool.finalizeDraw = function() {
                 lengthLabel: cmText, // <-- YENİ SATIR
                 lengthLabelPos: midPoint // <-- YENİ SATIR
             });
-            window.redrawAllStrokes(); 
+            window.redrawAllStrokes();
+            window.touchHistoryBuffer = []; 
         } else {
             console.error("Hata: drawnStrokes veya redrawAllStrokes globalda bulunamadı!");
         }
