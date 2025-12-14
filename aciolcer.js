@@ -329,39 +329,51 @@ const resize = this.resizeHandle;
 
     onUp: function(e) {
     if (this.interactionMode === 'drawing') {
-        // (audio pause kodu sizde zaten vardı)
+        // 1. Sesi durdur
         window.audio_draw.pause();
         window.audio_draw.currentTime = 0;
 
-        // --- KRİTİK FİNALİZE KONTROLÜ ---
-        // Çizimi kalıcı olarak kaydetmeye zorla (Silgi aktif olsa bile)
+        // --- KRİTİK EKLEME BURADA ---
+        if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 0) {
+            const safePos = window.touchHistoryBuffer[window.touchHistoryBuffer.length - 1];
+            // Son güvenli pozisyonu kullanarak açıyı güncelle
+            const gdx = safePos.x - this.state.x;
+            const gdy = safePos.y - this.state.y;
+            const rad = -this.state.angle * Math.PI / 180;
+            const ldx = gdx * Math.cos(rad) - gdy * Math.sin(rad);
+            const ldy = gdx * Math.sin(rad) + gdy * Math.cos(rad);
+
+            let localAngleDeg;
+            if (ldy > 0) {
+                localAngleDeg = (ldx > 0) ? 0 : 180;
+            } else {
+                localAngleDeg = Math.atan2(-ldy, ldx) * 180 / Math.PI;
+            }
+            this.state.currentDrawAngleLocal = localAngleDeg;
+        }
+        // --- EKLEME SONU ---
+
+        // finalize çağrısı
         this.finalizeDraw();
-        // --- KONTROL SONU ---
-        
+
         this.state.isDrawing = false;
         this.previewCtx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
-        
-        // --- GECİKME VE KRİTİK DÜZELTME ---
+
         setTimeout(() => {
-            this.previewCanvas.style.display = 'none'; // Önizlemeyi kapat
-            
-            // 1. Kırmızı çizgiyi sıfırla
+            this.previewCanvas.style.display = 'none';
             this.redLine.style.transition = 'transform 0.05s ease-out';
             this.redLine.style.transform = 'rotate(0deg)';
-            
-            // 2. HANDLE'I DÜZELT: Sadece BASE konumuna sıfırla
             this.drawHandle.style.transition = 'transform 0.05s ease-out';
-            this.drawHandle.style.transform = 'translateX(-50%)'; 
-            
+            this.drawHandle.style.transform = 'translateX(-50%)';
             this.drawHandleLabel.style.display = 'none';
-        }, 50); // 50ms gecikme
-        // --- YENİ KOD SONU ---
+        }, 50);
     }
     if (this.interactionMode === 'dragging') {
         this.bodyElement.style.cursor = 'grab';
     }
     this.interactionMode = 'none';
 },
+
 
     // --- 6. ÇİZİM MANTIĞI (DÜZELTİLDİ: Ters Döndürme Uygulandı) ---
     // --- aciolcer.js ---
@@ -451,7 +463,11 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
         const cy = this.state.y;
 
         // Lokal açıdan Global açıya geç
-        const localAngleDeg = this.state.currentDrawAngleLocal;
+        const localAngleDeg = this.state.currentDrawAngleLocal || (window.touchHistoryBuffer.at(-1) ? Math.atan2(
+    window.touchHistoryBuffer.at(-1).y - this.state.y,
+    window.touchHistoryBuffer.at(-1).x - this.state.x
+) * 180 / Math.PI : 0);
+
         // (Lokal Y-yukarı açısını, Global Y-aşağı sistemine çevir ve aletin dönüşünü ekle)
         // Global = (360 - Lokal) + AletDönüşü
         const globalAngleRad = ((360 - localAngleDeg) + this.state.angle) * Math.PI / 180;
@@ -486,6 +502,7 @@ if (window.touchHistoryBuffer && window.touchHistoryBuffer.length > 15) {
                 label1: l1, label2: l2
             });
             window.redrawAllStrokes();
+            window.touchHistoryBuffer = [];
         }
     }
 }; // <-- Bu, window.AciolcerTool nesnesini kapatır
